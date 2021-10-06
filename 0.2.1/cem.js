@@ -16,6 +16,7 @@
 // Classes
 export * from './src/UIZoom.js';
 export * from './src/Clock.js';
+export * from './src/Queue.js';
 
 // Named Groups
 export * as THREE from './src/THREE.js';
