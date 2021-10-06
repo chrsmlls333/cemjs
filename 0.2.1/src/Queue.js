@@ -36,7 +36,7 @@ export class Queue {
     return averageArray(this.a);
   }
   tick(value) {
-    this.enqueue(v);
+    this.enqueue(value);
     this.dequeue();
     return this.average();
   }
