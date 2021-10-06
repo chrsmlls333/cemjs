@@ -26,3 +26,13 @@ export * from './src/easing.js';
 // Assorted
 export * from './src/math.js';
 export * from './src/logging.js';
+
+//============================================
+
+export const preDraw = function() {
+  
+}
+
+export const postDraw = function() {
+  
+}

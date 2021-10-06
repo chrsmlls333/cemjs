@@ -42,3 +42,14 @@ export class Queue {
   }
 }
 
+export class FrameCounter {
+  constructor() {
+    const historyWindow = 10
+    const expectedFrameRate = 30;
+    this.frameRateHistory = new RollingAverage(historyWindow, expectedFrameRate);
+    this.frameDelayHistory = new RollingAverage(historyWindow, 1.0/expectedFrameRate);
+  }
+  tick() {
+
+  }
+}
