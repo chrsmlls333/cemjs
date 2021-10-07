@@ -22,6 +22,7 @@ export * from './src/Queue.js';
 export * as THREE from './src/THREE.js';
 export * as Timers from './src/Timers.js';
 export * from './src/easing.js';
+export * as SVG from './src/p5SVG.js';
 
 // Assorted
 export * from './src/math.js';
