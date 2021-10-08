@@ -52,7 +52,7 @@ let svgRequested = false;
 export const requestSVG = () => { svgRequested = true; }
 const recordSVG = () => {
   if (!svgRequested) return;
-  if (!SVGMode()) console.log("Can't record an SVG with this kind of canvas!")
+  if (!SVGmode()) console.log("Can't record an SVG with this kind of canvas!")
 
   processSVG();
   save();
