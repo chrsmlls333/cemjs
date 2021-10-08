@@ -1,3 +1,4 @@
+import { cyrusBeck } from "./math/lineClipping.js/index.js";
 
 export const SVGmode = () => {
     return !!canvas.svg;
@@ -41,9 +42,9 @@ export const getLinePathXY = (pathElt) => {
 
     //Throw if unsupported commands are found!
     let allCommandChars = commands.map(v => v.command);
-    if (allCommandChars.some(c => "MLHV".indexOf(c) == -1 ))
+    if (allCommandChars.some(c => "MLHV".indexOf(c) == -1 )) {
         throw new Error(`I am not samrt enough to understand some of these codes: "${allCommandChars.join(',')}"`)
-    
+    }
     //Get some vectors for our trouble
     let points = commands.map(c => {
         switch (c.command) {
@@ -74,9 +75,24 @@ export const setLinePathXY = (pathElt, vectors, closed = false) => {
     let dString = encodedTokens.join('');
     dString = closed ? dString + ' Z' : dString;
 
-    console.log(pathElt.getAttribute('d'))
     pathElt.setAttribute('d', dString);
-    console.log(pathElt.getAttribute('d'))
     return dString;
 }
 
+export const cropPath = (pathElt) => {
+    if (pathElt instanceof p5.Element) pathElt = pathElt.elt;
+    if (!(pathElt instanceof Element && pathElt.localName == 'path'))
+        throw new TypeError('What did you feed me??');
+    
+    let linePoints = getLinePathXY(pathElt);
+    let linePointsCrop = cyrusBeck(linePoints); //defaults to canvas size
+    // if (linePointsCrop != null) {
+    //     console.log(`old: (${linePoints[0].x}, ${linePoints[0].y}) (${linePoints[1].x}, ${linePoints[1].y})`);
+    //     console.log(`new: (${linePointsCrop[0].x}, ${linePointsCrop[0].y}) (${linePointsCrop[1].x}, ${linePointsCrop[1].y})`);}
+
+    if (linePointsCrop == null ||                       //if outside of the canvas
+        linePointsCrop[0].equals(linePointsCrop[1])) {   //if cropped to a single point on the edge
+        pathElt.remove();
+    }
+    else setLinePathXY(pathElt, linePointsCrop) 
+}
