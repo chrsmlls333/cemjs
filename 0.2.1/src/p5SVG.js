@@ -1,4 +1,4 @@
-import { cyrusBeck } from "./math/lineClipping.js/index.js";
+import { cyrusBeck } from "./math/lineClipping.js";
 
 export const SVGmode = () => {
     return !!canvas.svg;
@@ -18,12 +18,6 @@ export const removeBackgroundSVG = () => {
         console.log("Background rect removed from SVG element...");
     }
 }
-
-export const processSVG = () => {
-    removeBackgroundSVG();
-
-}
-
 
 export const getLinePathXY = (pathElt) => {
     if (pathElt instanceof p5.Element) pathElt = pathElt.elt;
@@ -91,8 +85,38 @@ export const cropPath = (pathElt) => {
     //     console.log(`new: (${linePointsCrop[0].x}, ${linePointsCrop[0].y}) (${linePointsCrop[1].x}, ${linePointsCrop[1].y})`);}
 
     if (linePointsCrop == null ||                       //if outside of the canvas
-        linePointsCrop[0].equals(linePointsCrop[1])) {   //if cropped to a single point on the edge
+        linePointsCrop[0].equals(linePointsCrop[1])) {  //if cropped to a single point on the edge
         pathElt.remove();
+        return -1;
     }
-    else setLinePathXY(pathElt, linePointsCrop) 
+    else {
+        setLinePathXY(pathElt, linePointsCrop) 
+
+        if (linePoints[0].equals(linePointsCrop[0]) &
+            linePoints[1].equals(linePointsCrop[1])) return 0
+
+        return 1;
+    }
+}
+
+export const cropAllPaths = () => {
+    let paths = querySVG('path');
+    let originalTotal = paths.length;
+    let deleted = 0;
+    let altered = 0;
+    paths.forEach((path, i) => {
+      let result = cropPath(path);    
+      if (result == -1) deleted++;
+      if (result ==  1) altered++;
+    });
+    console.log(`Paths cropped to canvas: 
+    ${originalTotal} to process... 
+    ${altered} cropped...
+    ${deleted} discarded...
+    ${originalTotal-deleted} exported...`);
+}
+
+export const processSVG = () => {
+    removeBackgroundSVG();
+    cropAllPaths();
 }
