@@ -52,11 +52,14 @@ let svgRequested = false;
 export const requestSVG = () => { svgRequested = true; }
 const recordSVG = () => {
   if (!svgRequested) return;
-  if (!SVGmode()) console.log("Can't record an SVG with this kind of canvas!")
+  svgRequested = false;
+  if (!SVGmode()) {
+    console.log("Can't record an SVG with this kind of canvas!");
+    return;
+  }
 
   processSVG();
   save();
   // const svgGraphicsContainer = querySVG(':scope > g');
   // const backgroundSVG = querySVG(':scope > g > rect:first-child')
-  svgRequested = false;
 }
