@@ -17,49 +17,15 @@
 export * from './src/helpers/UIZoom.js';
 export * from './src/helpers/Clock.js';
 export * from './src/helpers/Queue.js';
+export * from './src/p5/p5Manager.js';
 
 // Named Groups
 export * as THREE from './src/helpers/THREE.js';
 export * as Timers from './src/helpers/Timers.js';
-export * as SVG from './src/p5SVG.js';
+export * as SVG from './src/p5/p5SVG.js';
 
 // Assorted
 export * from './src/math/index.js';
 export * from './src/logging.js';
 
 //============================================
-
-import { Queue } from './src/helpers/Queue.js';
-import { SVGmode, processSVG } from './src/p5SVG.js';
-
-
-const frames = new Queue(30, 60);
-export const preDraw = function() {
-  frames.tick(frameRate());
-  document.title = `${int(frameRate())}/${int(frames.average())} fps, Frame ${frameCount}`;
-  if (SVGmode()) clear();
-
-}
-
-export const postDraw = function() {
-  recordSVG();
-}
-
-//===========================================
-
-
-let svgRequested = false;
-export const requestSVG = () => { svgRequested = true; }
-const recordSVG = () => {
-  if (!svgRequested) return;
-  svgRequested = false;
-  if (!SVGmode()) {
-    console.log("Can't record an SVG with this kind of canvas!");
-    return;
-  }
-
-  processSVG();
-  save();
-  // const svgGraphicsContainer = querySVG(':scope > g');
-  // const backgroundSVG = querySVG(':scope > g > rect:first-child')
-}

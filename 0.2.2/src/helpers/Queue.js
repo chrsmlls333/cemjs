@@ -33,8 +33,10 @@ export class Queue {
   length() {
     return this.a.length;
   }
-  average() {
-    return averageArray(this.a);
+  average(last = null) {
+    if (!last) return averageArray(this.a); 
+    let num = Math.min(this.a.length, last);
+    return averageArray(this.a.slice(-num));
   }
   tick(value) {
     this.enqueue(value);

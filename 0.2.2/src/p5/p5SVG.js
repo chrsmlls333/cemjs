@@ -1,31 +1,37 @@
-import { cyrusBeck } from "./math/lineClipping.js";
+import { cyrusBeck } from "../math/lineClipping.js";
 
-export const SVGmode = (c = canvas) => !!c.svg;
+const typecheckSVGCanvasElement = e => {
+    if (e instanceof p5.RendererSVG) e = e.elt;
+    if (e instanceof p5.Graphics) e = e.elt;
+    if (!e.svg || e.svg.localName != 'svg')
+        throw new TypeError('What did you feed me??')
+    return e;
+}
 
-export const removeBackgroundSVG = () => {
-    if (!SVGmode()) throw new TypeError("p5 canvas is not an SVG!");
-    const query = querySVG(':scope > g > rect:first-child');
+export const removeBackgroundSVG = (c) => {
+    const { svg } = typecheckSVGCanvasElement(c);
+    const query = svg.querySelectorAll(':scope > g > rect:first-child');
     if (!query.length) { 
         console.log("No background rect found to remove!"); 
         return;
     }
     const bg = query[0];
-    if (Number.parseInt(bg.attribute('width')) == width && 
-        Number.parseInt(bg.attribute('height')) == height) {
-        bg.elt.remove();
+    if (Number.parseInt(bg.getAttribute('width'))  == c.width && 
+        Number.parseInt(bg.getAttribute('height')) == c.height) {
+        bg.remove();
         console.log("Background rect removed from SVG element...");
     }
 }
 
-const typeCheckElement = e => {
-    if (e instanceof p5.Element) return e.elt;
+const typecheckPathElement = e => {
+    if (e instanceof p5.Element) e = e.elt;
     if (!(e instanceof Element && e.localName == 'path'))
         throw new TypeError('What did you feed me??')
     return e;
 }
 
 export const getLinePathXY = (pathElt) => {
-    pathElt = typeCheckElement(pathElt);
+    pathElt = typecheckPathElement(pathElt);
 
     const pathData = pathElt.getAttribute('d');
     let commTokens = pathData.split(/(?=[mlhvcsqtaz])/i).map(s => s.trim()).filter(Boolean);
@@ -62,7 +68,7 @@ export const getLinePathXY = (pathElt) => {
 }
 
 export const setLinePathXY = (pathElt, vectors, closed = false) => {
-    pathElt = typeCheckElement(pathElt);
+    pathElt = typecheckPathElement(pathElt);
 
     let encodedTokens = vectors.map((v, i) => {
         return ` ${i == 0 ? 'M' : 'L'} ${v.x.toPrecision(8)} ${v.y.toPrecision(8)}`;
@@ -75,7 +81,7 @@ export const setLinePathXY = (pathElt, vectors, closed = false) => {
 }
 
 export const cropPath = (pathElt) => {
-    pathElt = typeCheckElement(pathElt);
+    pathElt = typecheckPathElement(pathElt);
     
     let linePoints = getLinePathXY(pathElt);
     let linePointsCrop = cyrusBeck(linePoints); //defaults to canvas size
@@ -98,8 +104,9 @@ export const cropPath = (pathElt) => {
     }
 }
 
-export const cropAllPaths = () => {
-    let paths = querySVG('path');
+export const cropAllPaths = (c = canvas) => {
+    const { svg } = typecheckSVGCanvasElement(c);
+    let paths = svg.querySelectorAll('path');
     let originalTotal = paths.length;
     let deleted = 0;
     let altered = 0;
@@ -115,7 +122,7 @@ export const cropAllPaths = () => {
     ${originalTotal-deleted} exported...`);
 }
 
-export const processSVG = () => {
-    removeBackgroundSVG();
-    cropAllPaths();
+export const processSVG = (c = canvas) => {
+    removeBackgroundSVG(c);
+    cropAllPaths(c);
 }
