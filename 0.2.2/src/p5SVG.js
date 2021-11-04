@@ -1,13 +1,11 @@
 import { cyrusBeck } from "./math/lineClipping.js";
 
-export const SVGmode = () => {
-    return !!canvas.svg;
-}
+export const SVGmode = (c = canvas) => !!c.svg;
 
 export const removeBackgroundSVG = () => {
     if (!SVGmode()) throw new TypeError("p5 canvas is not an SVG!");
     const query = querySVG(':scope > g > rect:first-child');
-    if (query.length == 0) { 
+    if (!query.length) { 
         console.log("No background rect found to remove!"); 
         return;
     }
@@ -19,10 +17,15 @@ export const removeBackgroundSVG = () => {
     }
 }
 
-export const getLinePathXY = (pathElt) => {
-    if (pathElt instanceof p5.Element) pathElt = pathElt.elt;
-    if (!(pathElt instanceof Element && pathElt.localName == 'path'))
+const typeCheckElement = e => {
+    if (e instanceof p5.Element) return e.elt;
+    if (!(e instanceof Element && e.localName == 'path'))
         throw new TypeError('What did you feed me??')
+    return e;
+}
+
+export const getLinePathXY = (pathElt) => {
+    pathElt = typeCheckElement(pathElt);
 
     const pathData = pathElt.getAttribute('d');
     let commTokens = pathData.split(/(?=[mlhvcsqtaz])/i).map(s => s.trim()).filter(Boolean);
@@ -59,9 +62,7 @@ export const getLinePathXY = (pathElt) => {
 }
 
 export const setLinePathXY = (pathElt, vectors, closed = false) => {
-    if (pathElt instanceof p5.Element) pathElt = pathElt.elt;
-    if (!(pathElt instanceof Element && pathElt.localName == 'path'))
-        throw new TypeError('What did you feed me??')
+    pathElt = typeCheckElement(pathElt);
 
     let encodedTokens = vectors.map((v, i) => {
         return ` ${i == 0 ? 'M' : 'L'} ${v.x.toPrecision(8)} ${v.y.toPrecision(8)}`;
@@ -74,9 +75,7 @@ export const setLinePathXY = (pathElt, vectors, closed = false) => {
 }
 
 export const cropPath = (pathElt) => {
-    if (pathElt instanceof p5.Element) pathElt = pathElt.elt;
-    if (!(pathElt instanceof Element && pathElt.localName == 'path'))
-        throw new TypeError('What did you feed me??');
+    pathElt = typeCheckElement(pathElt);
     
     let linePoints = getLinePathXY(pathElt);
     let linePointsCrop = cyrusBeck(linePoints); //defaults to canvas size
