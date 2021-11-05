@@ -1,5 +1,6 @@
 
 import { getTimeStamp } from '../helpers/Clock.js';
+import { FrameData } from '../helpers/FrameData.js';
 import { Queue } from '../helpers/Queue.js';
 import { processSVG } from './p5SVG.js';
 
@@ -74,6 +75,8 @@ export class p5Manager {
     this.userDraw(svgc)
     processSVG(svgc.elt);
     svgc.save(this.getFileTimeStamp());
+
+    this.saveUserData();
   }
 
   #imageRequested = false;
@@ -86,25 +89,42 @@ export class p5Manager {
 
     const p2dc = this.subCanvasP2D;
     p2dc.save(this.getFileTimeStamp());
+
+    this.saveUserData();
   }
 
-  #currentTimeStamp = {
-    exp: null,
-    ts: null,
-  }
-  getFileTimeStamp() {
-    if (this.#currentTimeStamp.exp !== frameCount) {
-      this.#currentTimeStamp = {
-        exp: frameCount,
-        ts: getTimeStamp(),
-      };
-    }
-    return this.#currentTimeStamp.ts;
-  }
+
+  #frameTS = new FrameData(getTimeStamp);
+  getFileTimeStamp() { return this.#frameTS.get() }
+
 
   //=====================================================
 
 
+  #frameUserConfig = new FrameData();
+  #frameUserConfigSaved = new FrameData(() => false);
+  registerUserData( callback ) { this.#frameUserConfig.registerFrameData(callback); }
+  setUserData(data) { this.#frameUserConfig.set(data); }
+  getUserData() { return this.#frameUserConfig.get(); }
+  saveUserData() {
+    if (this.#frameUserConfigSaved.get() === true) return;
+    const userData = this.getUserData();
+    if ( !userData || !Object.keys(userData).length ) {
+      console.warn("p5Manager.saveUserData: No data to write!");
+      return;
+    }
+
+    let json = JSON.stringify(userData, function(key, value) {
+      if (value instanceof p5.Vector) {
+        const { x, y, z } = value;
+        return { x, y, z };
+      }
+      return value
+    }, 2);
+    saveStrings(json.split('\n'), `${this.getFileTimeStamp()}.config.json`, 'json');
+
+    this.#frameUserConfigSaved.set(true);
+  }
 
 }
 
