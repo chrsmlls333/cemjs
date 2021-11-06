@@ -13,7 +13,9 @@ export class p5Manager {
     this.#graphics.P2D = this.canvas._pInst;
     this.#graphics.SVG = createGraphics(width, height, SVG);
 
-    
+    const s = ceil(4000 / max(width, height)); //target 4K resolution
+    this.P2DhiScale = s;
+    this.#graphics.P2Dhi = createGraphics(width*s, height*s, P2D);
 
     //debug
     // this.canvas.hide()
@@ -95,6 +97,12 @@ export class p5Manager {
 
     const p2dc = this.#graphics.P2D;
     p2dc.save(this.getFileTimeStamp());
+
+    const p2dhic = this.#graphics.P2Dhi;
+    p2dhic.clear();
+    p2dhic.scale(this.P2DhiScale);
+    this.userDraw(p2dhic);
+    p2dhic.save(this.getFileTimeStamp()+'_hi');
 
     this.saveUserData();
   }
