@@ -6,22 +6,28 @@ import { processSVG } from './p5SVG.js';
 
 
 export class p5Manager { 
+  #graphics = {};
+
   constructor(width, height) {
     this.canvas = createCanvas(width, height, P2D);
-    this.subCanvasP2D = createGraphics(width, height, P2D);
-    this.subCanvasSVG = createGraphics(width, height, SVG);
+    this.#graphics.P2D = this.canvas._pInst;
+    this.#graphics.SVG = createGraphics(width, height, SVG);
+
+    
 
     //debug
-    this.canvas.hide()
-    this.subCanvasP2D.show();
-    // this.subCanvasSVG.show();
+    // this.canvas.hide()
+    // this.#graphics.SVG.show();
+    // this.#graphics.P2Dhi.show();
 
     return this;
   }
   
-  get canvases() {
-    const  { canvas, subCanvasP2D, subCanvasSVG } = this;
-    return { canvas, subCanvasP2D, subCanvasSVG };
+  get canvases() { return { ...this.#graphics } }
+  applyToCanvases( callback ) {
+    for (const [canvasName, canvas] of Object.entries(this.canvases)) {
+      callback(canvas, canvasName);
+    }
   }
 
   //====================================================
@@ -42,7 +48,7 @@ export class p5Manager {
 
   runUserDraw() {
     if (!this.userDraw) throw "Can't record an SVG! No user-defined draw() function registered;";
-    this.userDraw(this.subCanvasP2D);
+    this.userDraw(this.#graphics.P2D);
   }
 
   postDraw() {
@@ -67,10 +73,10 @@ export class p5Manager {
     if (!this.#svgRequested) return;
     this.#svgRequested = false;
 
-    if (!this.subCanvasSVG) throw "Can't record an SVG!";
+    if (!this.#graphics.SVG) throw "Can't record an SVG!";
     if (!this.userDraw) throw "Can't record an SVG! No user-defined draw() function registered;";
 
-    const svgc = this.subCanvasSVG;
+    const svgc = this.#graphics.SVG;
     svgc.clear();
     this.userDraw(svgc)
     processSVG(svgc.elt);
@@ -85,9 +91,9 @@ export class p5Manager {
     if (!this.#imageRequested) return;
     this.#imageRequested = false;
 
-    if (!this.subCanvasP2D) throw "Can't save an image!";
+    if (!this.#graphics.P2D) throw "Can't save an image!";
 
-    const p2dc = this.subCanvasP2D;
+    const p2dc = this.#graphics.P2D;
     p2dc.save(this.getFileTimeStamp());
 
     this.saveUserData();
