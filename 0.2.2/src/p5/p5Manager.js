@@ -64,7 +64,8 @@ export class p5Manager {
   #frames = new Queue(300, 60);
   #frameCounterTick = () => {
     this.#frames.tick(frameRate());
-    return this.#frames.average(frameRate()*5);
+    const secondsHistory = 5;
+    return this.#frames.average(frameRate()*secondsHistory);
   }
 
   //=====================================================
