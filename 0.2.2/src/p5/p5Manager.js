@@ -81,9 +81,11 @@ export class p5Manager {
 
     const svgc = this.#graphics.SVG;
     svgc.clear();
+    svgc.push();
     this.userDraw(svgc)
     processSVG(svgc.elt);
     svgc.save(this.getFileTimeStamp());
+    svgc.pop();
 
     this.saveUserData();
   }
@@ -94,16 +96,20 @@ export class p5Manager {
     if (!this.#imageRequested) return;
     this.#imageRequested = false;
 
-    if (!this.#graphics.P2D) throw "Can't save an image!";
+    if (!this.#graphics.P2D) {
+      const p2dc = this.#graphics.P2D;
+      p2dc.save(this.getFileTimeStamp());
+    }
 
-    const p2dc = this.#graphics.P2D;
-    p2dc.save(this.getFileTimeStamp());
-
+    if (!this.#graphics.P2D) {
     const p2dhic = this.#graphics.P2Dhi;
-    p2dhic.clear();
-    p2dhic.scale(this.P2DhiScale);
-    this.userDraw(p2dhic);
-    p2dhic.save(this.getFileTimeStamp()+'_hi');
+      p2dhic.clear();
+      p2dhic.push();
+      p2dhic.scale(this.P2DhiScale);
+      this.userDraw(p2dhic);
+      p2dhic.save(this.getFileTimeStamp()+'_hi');
+      p2dhic.pop();
+    }
 
     this.saveUserData();
   }

@@ -26,7 +26,6 @@ export class FrameData {
     }
 
     get( expiredAllowed = false ) {
-        console.log(this.#fd);
         if (!expiredAllowed && this.isExpired()) this.set();
         return this.#fd.data;
     }
