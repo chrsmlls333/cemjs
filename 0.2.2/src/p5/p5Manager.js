@@ -96,13 +96,13 @@ export class p5Manager {
     if (!this.#imageRequested) return;
     this.#imageRequested = false;
 
-    if (!this.#graphics.P2D) {
+    if (this.#graphics.P2D) {
       const p2dc = this.#graphics.P2D;
       p2dc.save(this.getFileTimeStamp());
     }
 
-    if (!this.#graphics.P2D) {
-    const p2dhic = this.#graphics.P2Dhi;
+    if (this.#graphics.P2Dhi) {
+      const p2dhic = this.#graphics.P2Dhi;
       p2dhic.clear();
       p2dhic.push();
       p2dhic.scale(this.P2DhiScale);
