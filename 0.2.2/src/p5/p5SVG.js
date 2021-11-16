@@ -1,4 +1,5 @@
 import { cyrusBeck } from "../math/lineClipping.js";
+import { VecEquals } from "../math/vectormath.js";
 
 const typecheckSVGCanvasElement = e => {
     if (e instanceof p5.RendererSVG) e = e.elt;
@@ -89,16 +90,16 @@ export const cropPath = (pathElt) => {
     //     console.log(`old: (${linePoints[0].x}, ${linePoints[0].y}) (${linePoints[1].x}, ${linePoints[1].y})`);
     //     console.log(`new: (${linePointsCrop[0].x}, ${linePointsCrop[0].y}) (${linePointsCrop[1].x}, ${linePointsCrop[1].y})`);}
 
-    if (linePointsCrop == null ||                       //if outside of the canvas
-        linePointsCrop[0].equals(linePointsCrop[1])) {  //if cropped to a single point on the edge
+    if (linePointsCrop == null ||                           //if outside of the canvas
+        VecEquals(linePointsCrop[0], linePointsCrop[1])) {  //if cropped to a single point on the edge
         pathElt.remove();
         return -1;
     }
     else {
         setLinePathXY(pathElt, linePointsCrop) 
 
-        if (linePoints[0].equals(linePointsCrop[0]) &
-            linePoints[1].equals(linePointsCrop[1])) return 0
+        if (VecEquals(linePoints[0], linePointsCrop[0]) &
+            VecEquals(linePoints[1], linePointsCrop[1])) return 0
 
         return 1;
     }

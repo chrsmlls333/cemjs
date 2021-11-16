@@ -1,5 +1,12 @@
 import mapValues from "../../../submodules/lodash/mapValues.js";
 
+
+export const Vec = (x = 0, y = 0) => ({x,y}); // Simple vector object
+export const VecToP5Vector = ({x,y}) => createVector(x, y);
+export const VecEquals = (v1, v2) => (v1.x === v2.x && v1.y === v2.y)
+
+// ==========================================================================
+
 export const mapVector = (vec, func) => {
     if ((p5 && vec instanceof p5.Vector) ||
         (vec && vec.x !== undefined && vec.y !== undefined)) {
@@ -13,11 +20,6 @@ export const mapVector = (vec, func) => {
     }
 }
 
-export const roundVector = (vec) => mapVector(vec, Math.round);
-export const floorVector = (vec) => mapVector(vec, Math.floor);
-export const  ceilVector = (vec) => mapVector(vec,  Math.ceil);
-
-export const Vec = (x = 0, y = 0) => ({x,y}); // Simple vector object
 export const vecMultScalar = (vec1, s) => mapVector(vec1, v => v * s );
 export const vecMultVec = (vec1, vec2) => mapVector(vec1, (v, k) => v * vec2[k]);
 export const vecDivScalar =  (vec1, s) => mapVector(vec1, v => v / s );
@@ -27,6 +29,9 @@ export const vecAddVec =  (vec1, vec2) => mapVector(vec1, (v, k) => v + vec2[k])
 export const vecSubScalar =  (vec1, s) => mapVector(vec1, v => v - s );
 export const vecSubVec =  (vec1, vec2) => mapVector(vec1, (v, k) => v - vec2[k]);
 
+export const roundVector = (vec) => mapVector(vec, Math.round);
+export const floorVector = (vec) => mapVector(vec, Math.floor);
+export const  ceilVector = (vec) => mapVector(vec,  Math.ceil);
 
 
 export const dot = (v1, v2) => {
