@@ -49,7 +49,7 @@ export class p5Manager {
   }
 
   runUserDraw() {
-    if (!this.userDraw) throw "Can't record an SVG! No user-defined draw() function registered;";
+    if (!this.userDraw) throw "No user-defined draw() function registered;";
     this.userDraw(this.#graphics.P2D);
   }
 
