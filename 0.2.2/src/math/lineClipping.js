@@ -1,4 +1,4 @@
-import { Vec, dot } from "./vectormath.js"
+import { Vec, VecEquals, dot } from "./vectormath.js"
 
 export const canvasVectorSet = () => [
     Vec(0,0),
@@ -107,4 +107,19 @@ export const cyrusBeck = (lin, vertices = canvasVectorSet()) => {
         = lin[0].y
           + P1_P0.y * temp[1]; 
     return newPair;
+}
+
+export const cyrusBeckLine = (x1, y1, x2, y2, bounds) => {
+    const linePoints = [Vec(x1, y1), Vec(x2, y2)];
+
+    let linePointsCrop = cyrusBeck(linePoints, bounds); //defaults to canvas size
+
+    if (linePointsCrop == null ||                           //if outside of the canvas
+        VecEquals(linePointsCrop[0], linePointsCrop[1])) {  //if cropped to a single point on the edge
+        return null; //do nothing
+    }
+    else {
+        return[ linePointsCrop[0].x, linePointsCrop[0].y, 
+                linePointsCrop[1].x, linePointsCrop[1].y ];
+    }
 }

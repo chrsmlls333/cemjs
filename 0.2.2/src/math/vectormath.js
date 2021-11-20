@@ -2,7 +2,9 @@ import mapValues from "../../../submodules/lodash/mapValues.js";
 
 
 export const Vec = (x = 0, y = 0) => ({x,y}); // Simple vector object
-export const VecToP5Vector = ({x,y}) => createVector(x, y);
+export const Vec3 = (x = 0, y = 0, z = 0) => ({x,y,z}); // Simple vector object
+export const VecToP5Vector = ({x,y,z}) => createVector(x, y, z || 0);
+export const VecToArray = ({x,y,z}) => z === undefined ? [x, y] : [x, y, z];
 export const VecEquals = (v1, v2) => (v1.x === v2.x && v1.y === v2.y)
 
 // ==========================================================================
@@ -35,13 +37,10 @@ export const  ceilVector = (vec) => mapVector(vec,  Math.ceil);
 
 
 export const dot = (v1, v2) => {
-    let x1, y1, x2, y2
-    if (Array.isArray(v1)) {
-        [x1, y1] = v1;
-        [x2, y2] = v2;
-    } else if (typeof v1 == 'object') {
-        ({x: x1, y: y1} = v1);
-        ({x: x2, y: y2} = v2);
-    } else throw new TypeError('oops')
-    return x1 * x2 + y1 * y2;
+    const va1 = VecToArray(v1),
+          va2 = VecToArray(v2);
+    if (va1.length !== va2.length) throw "Different-size matrices!"
+    return va1
+        .map((x, i) => va1[i] * va2[i])
+        .reduce((m, n) => m + n);
 }
