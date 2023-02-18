@@ -2,6 +2,7 @@
 import { getTimeStamp } from '../helpers/Clock.js';
 import { FrameData } from '../helpers/FrameData.js';
 import { Queue } from '../helpers/Queue.js';
+import { Mouse } from './p5Mouse.js';
 import { processSVG } from './p5SVG.js';
 
 
@@ -10,7 +11,7 @@ export class p5Manager {
 
   constructor(width, height) {
     this.canvas = createCanvas(width, height, P2D);
-    this.#graphics.P2D = this.canvas._pInst;
+    this.#graphics.P2D = this.pInst = this.canvas._pInst;
     this.#graphics.SVG = createGraphics(width, height, SVG);
 
     const s = ceil(4000 / max(width, height)); //target 4K resolution
@@ -21,6 +22,8 @@ export class p5Manager {
     // this.canvas.hide()
     // this.#graphics.SVG.show();
     // this.#graphics.P2Dhi.show();
+
+    this.mouse = new Mouse( this.pInst );
 
     return this;
   }

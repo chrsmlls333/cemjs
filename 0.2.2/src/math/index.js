@@ -16,3 +16,7 @@ const findStep = (func, value, step) => {
 export const roundStep = function(value, step = 1) { return findStep(Math.round, ...arguments) };
 export const floorStep = function(value, step = 1) { return findStep(Math.floor, ...arguments) };
 export const  ceilStep = function(value, step = 1) { return findStep( Math.ceil, ...arguments) };
+
+export const mod = (a, b) => {
+    return (((a % b) + b) % b);
+}
