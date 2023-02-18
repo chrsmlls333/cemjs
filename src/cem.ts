@@ -14,18 +14,18 @@
 */
 
 // Classes
-export * from './src/helpers/UIZoom.js';
-export * from './src/helpers/Clock.js';
-export * from './src/helpers/Queue.js';
-export * from './src/p5/p5Manager.js';
+// export * from '../legacy/UIZoom.js';
+export * from './helpers/Clock.js';
+export * from './helpers/Queue.js';
+export * from './p5/p5Manager.js';
 
 // Named Groups
-export * as THREE from './src/helpers/THREE.js';
-export * as Timers from './src/helpers/Timers.js';
-export * as SVG from './src/p5/p5SVG.js';
+// export * as THREE from './helpers/THREE.js';
+export * as Timers from './helpers/Timers.js';
+export * as SVG from './p5/p5SVG.js';
 
 // Assorted
-export * from './src/math/index.js';
-export * from './src/logging.js';
+export * from './math/index.js';
+export * from './utils/logging.js';
 
 //============================================

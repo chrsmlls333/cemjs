@@ -1,5 +1,4 @@
-import mapValues from "../../../submodules/lodash/mapValues.js";
-
+import mapValues from "lodash/mapValues"
 
 export const Vec = (x = 0, y = 0) => ({x,y}); // Simple vector object
 export const Vec3 = (x = 0, y = 0, z = 0) => ({x,y,z}); // Simple vector object

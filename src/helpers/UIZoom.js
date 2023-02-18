@@ -3,6 +3,7 @@ import { constrain, map, normalize, lerp } from "../math/index.js";
 // UI Zoom Feature /////////////////////////////////////////////////////
 
 export class UIZoom {
+  
   constructor(minimumZoom = 1, maximumZoom = 15, startingZoom = 1, interaction = true) {
 
     this.minZoom = minimumZoom;

@@ -1,4 +1,4 @@
-import { error, warn } from "../logging.js";
+import { error, warn } from "../utils/logging";
 
 // P5.js Supplemental //////////////////////////////////////////////////
 
