@@ -1,0 +1,41 @@
+{
+  "name": "cemjs",
+  "version": "0.3.0",
+  "description": "",
+  "type": "module",
+  "entry": "src/cem.ts",
+  "main": "dist/cem.js",
+  "module": "dist/cem.mjs",
+  "typings": "dist/cem.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "pretest": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chrsmlls333/cemjs.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/chrsmlls333/cemjs/issues"
+  },
+  "homepage": "https://github.com/chrsmlls333/cemjs#readme",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^24.0.1",
+    "@rollup/plugin-node-resolve": "^15.0.1",
+    "@rollup/plugin-typescript": "^11.0.0",
+    "esbuild": "^0.17.8",
+    "rollup": "^3.17.0",
+    "rollup-plugin-dts": "^5.2.0",
+    "rollup-plugin-esbuild": "^5.0.0",
+    "tslib": "^2.5.0"
+  },
+  "dependencies": {
+    "lodash": "^4.17.21"
+  }
+}
