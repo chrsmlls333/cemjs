@@ -7,7 +7,6 @@
     "moduleResolution": "node",
     // "declaration": true,
     // "declarationMap": true,
-    "types": ["p5", "p5/global"],
     "outDir": "dist"
   }
 }
