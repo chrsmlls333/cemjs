@@ -14,6 +14,9 @@ import commonjs from '@rollup/plugin-commonjs';
 import packageJson from './package.json' assert { type: 'json' }
 const name = packageJson.main.replace(/\.js$/, '')
 const input = packageJson.entry
+const globals = Object.keys({ 
+  ...packageJson.dependencies
+})
 
 // const bundle = config => ({
 //   ...config,
@@ -24,11 +27,6 @@ const input = packageJson.entry
 export default [
   {
     input,
-    plugins: [
-      nodeResolve(),
-      typescript(),
-      commonjs({ include: 'node_modules/**' })
-    ],
     output: [
       {
         file: `${name}.js`,
@@ -46,6 +44,12 @@ export default [
         format: 'iife',
         sourcemap: true,
       },
+    ],
+    external: ["p5"],
+    plugins: [
+      nodeResolve(),
+      typescript(),
+      commonjs({ include: 'node_modules/**' })
     ],
   },
   // {

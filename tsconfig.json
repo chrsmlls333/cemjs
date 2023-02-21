@@ -1,5 +1,13 @@
 {
+  "include": ["src/**/*"],
   "compilerOptions": {
-    "target": "ESNext"
+    "target": "ESNext", 
+    "esModuleInterop": true,
+    "allowJs": true,
+    "moduleResolution": "node",
+    // "declaration": true,
+    // "declarationMap": true,
+    "types": ["p5", "p5/global"],
+    "outDir": "dist"
   }
 }
