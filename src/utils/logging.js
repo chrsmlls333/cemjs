@@ -3,12 +3,12 @@
 let verbose = true;
 export const setVerbose = (v) => verbose = v;
 
-export const print = (str) => {
-  if (verbose) console.log(str);
+export const print = (...args) => {
+  if (verbose) console.log(...args);
 };
 
-export const warn = (str) => {
-  if (verbose) console.warn(str);
+export const warn = (...args) => {
+  if (verbose) console.warn(...args);
 };
 
 export const error = console.error;
