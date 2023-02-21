@@ -1,11 +1,11 @@
 // Math Functions //////////////////////////////////////////////////////
 
-export * from "./easing.js";
-export * from "./lineClipping.js";
-export * from "./p5math.js";
-export * from "./random.js";
-export * from "./scalingfit.js";
-export * from "./vectormath.js";
+export * from "./easing";
+export * from "./lineClipping";
+export * from "./p5math";
+export * from "./random";
+export * from "./scalingfit";
+export * from "./vectormath";
 
 //
 

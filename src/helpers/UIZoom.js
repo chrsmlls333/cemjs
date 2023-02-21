@@ -1,4 +1,4 @@
-import { constrain, map, normalize, lerp } from "../math/index.js";
+import { constrain, map, normalize, lerp } from "../math/index";
 
 // UI Zoom Feature /////////////////////////////////////////////////////
 

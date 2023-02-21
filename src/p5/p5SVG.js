@@ -1,5 +1,5 @@
-import { cyrusBeck } from "../math/lineClipping.js";
-import { VecEquals } from "../math/vectormath.js";
+import { cyrusBeck } from "../math/lineClipping";
+import { VecEquals } from "../math/vectormath";
 
 const typecheckSVGCanvasElement = e => {
     if (e instanceof p5.RendererSVG) e = e.elt;

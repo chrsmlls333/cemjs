@@ -1,4 +1,4 @@
-import { Vec, VecEquals, dot } from "./vectormath.js"
+import { Vec, VecEquals, dot } from "./vectormath"
 
 export const canvasVectorSet = () => [
     Vec(0,0),

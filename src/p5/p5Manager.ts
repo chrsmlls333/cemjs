@@ -1,35 +1,45 @@
 
-import { getTimeStamp } from '../helpers/Clock.js';
-import { FrameData } from '../helpers/FrameData.js';
-import { Queue } from '../helpers/Queue.js';
-import { Mouse } from './p5Mouse.js';
-import { processSVG } from './p5SVG.js';
+import { getTimeStamp } from '../helpers/Clock';
+import { FrameData } from '../helpers/FrameData';
+import { Queue } from '../helpers/Queue';
+import { Mouse } from './p5Mouse';
+import { processSVG } from './p5SVG';
 
 
 export class p5Manager { 
-  #graphics = {};
+  pInst: p5;
+  #graphics: { [key: string]: p5|p5.Graphics } = {};
+  canvas: p5.Renderer;
+  P2DhiScale: number;
 
-  constructor(width, height) {
-    this.canvas = createCanvas(width, height, P2D);
-    this.#graphics.P2D = this.pInst = this.canvas._pInst;
-    this.#graphics.SVG = createGraphics(width, height, SVG);
+  mouse: Mouse;
 
-    const s = ceil(4000 / max(width, height)); //target 4K resolution
+  userDraw: (canvas: p5|p5.Graphics)=>void;
+
+  constructor(p: p5, width, height) {
+    this.pInst = p;
+    this.canvas = p.createCanvas(width, height, p.P2D);
+
+    this.#graphics.P2D = p;
+    
+    this.#graphics.SVG = p.createGraphics(width, height, (p as any).SVG);
+
+    const s = Math.ceil(4000 / Math.max(width, height)); //target 4K resolution
     this.P2DhiScale = s;
-    this.#graphics.P2Dhi = createGraphics(width*s, height*s, P2D);
+    this.#graphics.P2Dhi = p.createGraphics(width*s, height*s, p.P2D);
 
     //debug
     // this.canvas.hide()
     // this.#graphics.SVG.show();
     // this.#graphics.P2Dhi.show();
 
-    this.mouse = new Mouse( this.pInst );
+    this.mouse = new Mouse( p );
 
     return this;
   }
   
   get canvases() { return { ...this.#graphics } }
-  applyToCanvases( callback ) {
+  applyToCanvases( callback: (canvas: p5 | p5.Graphics, name: string)=>void ) {
     for (const [canvasName, canvas] of Object.entries(this.canvases)) {
       callback(canvas, canvasName);
     }
@@ -37,7 +47,7 @@ export class p5Manager {
 
   //====================================================
 
-  registerDraw( func ) {
+  registerDraw( func: (canvas: p5.Graphics)=>void ) {
     const isFunction = f => (f && {}.toString.call(f) === '[object Function]');
     if (!isFunction(func)) throw 'User-defined draw() is not a function!';
     this.userDraw = func;
@@ -48,7 +58,7 @@ export class p5Manager {
   
   preDraw() {
     let avg = this.#frameCounterTick();
-    document.title = `${int(frameRate())}/${int(avg)} fps, Frame ${frameCount}`;
+    document.title = `${Math.round(this.pInst.frameRate())}/${Math.round(avg)} fps, Frame ${this.pInst.frameCount}`;
   }
 
   runUserDraw() {
@@ -66,9 +76,9 @@ export class p5Manager {
 
   #frames = new Queue(300, 60);
   #frameCounterTick = () => {
-    this.#frames.tick(frameRate());
+    this.#frames.tick(this.pInst.frameRate());
     const secondsHistory = 5;
-    return this.#frames.average(frameRate()*secondsHistory);
+    return this.#frames.average(this.pInst.frameRate()*secondsHistory);
   }
 
   //=====================================================
@@ -82,10 +92,10 @@ export class p5Manager {
     if (!this.#graphics.SVG) throw "Can't record an SVG!";
     if (!this.userDraw) throw "Can't record an SVG! No user-defined draw() function registered;";
 
-    const svgc = this.#graphics.SVG;
-    svgc.clear();
+    const svgc = (this.#graphics.SVG as p5.Graphics);
+    svgc.clear(0,0,0,0);
     svgc.push();
-    this.userDraw(svgc)
+    this.userDraw(svgc);
     processSVG(svgc.elt);
     svgc.save(this.getFileTimeStamp());
     svgc.pop();
@@ -106,7 +116,7 @@ export class p5Manager {
 
     if (this.#graphics.P2Dhi) {
       const p2dhic = this.#graphics.P2Dhi;
-      p2dhic.clear();
+      p2dhic.clear(0,0,0,0);
       p2dhic.push();
       p2dhic.scale(this.P2DhiScale);
       this.userDraw(p2dhic);
@@ -145,7 +155,7 @@ export class p5Manager {
       }
       return value
     }, 2);
-    saveStrings(json.split('\n'), `${this.getFileTimeStamp()}.config.json`, 'json');
+    this.pInst.saveStrings(json.split('\n'), `${this.getFileTimeStamp()}.config.json`, 'json');
 
     this.#frameUserConfigSaved.set(true);
   }
