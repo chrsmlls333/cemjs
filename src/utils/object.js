@@ -1,4 +1,6 @@
-import { isString, isObjectLike } from "../../../submodules/lodash/lodash.js";
+import isString from "lodash/isString"
+import isObjectLike from "lodash/isObjectLike"
+
 
 export function removeProps(obj = {}, keys = []) {
     if (!Array.isArray(keys) && isString(keys)) keys = [keys];
