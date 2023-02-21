@@ -34,7 +34,7 @@ export default [
         sourcemap: true,
       },
       {
-        file: `${name}.mjs`,
+        file: `${name}.esm.js`,
         format: 'es',
         sourcemap: true,
       },
