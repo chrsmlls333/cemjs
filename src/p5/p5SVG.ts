@@ -1,16 +1,21 @@
-import { cyrusBeck } from "../math/lineClipping";
-import { VecEquals } from "../math/vectormath";
+import { canvasVectorSet, cyrusBeck } from "../math/lineClipping";
+import { Vec, VecEquals } from "../math/vectormath";
 
-const typecheckSVGCanvasElement = e => {
-    if (e instanceof p5.RendererSVG) e = e.elt;
-    if (e instanceof p5.Graphics) e = e.elt;
-    if (!e.svg || e.svg.localName != 'svg')
+import p5 from 'p5';
+// @ts-ignore
+import p5Svg from "p5.js-svg"
+
+const typecheckSVGCanvasElement = (e: p5.Graphics) => {
+    let elt: p5.Element; //actually a SVGCanvasElement
+    if (e.elt) elt = e.elt;
+    if (!(elt as any).svg || (elt as any).svg.localName != 'svg')
         throw new TypeError('What did you feed me??')
-    return e;
+    return elt;
 }
 
-export const removeBackgroundSVG = (c) => {
-    const { svg } = typecheckSVGCanvasElement(c);
+export const removeBackgroundSVG = (pInst: p5, c: p5.Graphics) => {
+    const elt = typecheckSVGCanvasElement(c);
+    const svg: SVGElement = (elt as any).svg;
     const query = svg.querySelectorAll(':scope > g > rect:first-child');
     if (!query.length) { 
         console.log("No background rect found to remove!"); 
@@ -26,12 +31,12 @@ export const removeBackgroundSVG = (c) => {
 
 const typecheckPathElement = e => {
     if (e instanceof p5.Element) e = e.elt;
-    if (!(e instanceof Element && e.localName == 'path'))
+    if (!(e instanceof SVGPathElement && e.localName == 'path'))
         throw new TypeError('What did you feed me??')
     return e;
 }
 
-export const getLinePathXY = (pathElt) => {
+export const getLinePathXY = (pathElt: SVGPathElement) => {
     pathElt = typecheckPathElement(pathElt);
 
     const pathData = pathElt.getAttribute('d');
@@ -39,13 +44,15 @@ export const getLinePathXY = (pathElt) => {
     const re = new RegExp(/(?<command>[A-Z]) *(?<x>-?[0-9.]+)[ ,]+(?<y>-?[0-9.]+)/);
     let commands = commTokens.map( s => {
         let g = re.exec(s).groups;
-        g.x = parseFloat(g.x);
-        g.y = parseFloat(g.y);
-        return g;
+        return {
+            command: g.command,
+            x: parseFloat(g.x),
+            y: parseFloat(g.y)
+        }
     } );
 
     //Throw if unsupported commands are found!
-    let allCommandChars = commands.map(v => v.command);
+    let allCommandChars = commands.map(c => c.command);
     if (allCommandChars.some(c => "MLHV".indexOf(c) == -1 )) {
         throw new Error(`I am not samrt enough to understand some of these codes: "${allCommandChars.join(',')}"`)
     }
@@ -53,22 +60,22 @@ export const getLinePathXY = (pathElt) => {
     let points = commands.map(c => {
         switch (c.command) {
             case 'M':
+                return Vec(c.x,c.y);
             case 'L':
-                return createVector(c.x,c.y);
+                return Vec(c.x,c.y);
             case 'H':
-                return createVector(c.x,0);
-            case 'H':
-                return createVector(0,c.x);
+                return Vec(c.x,0);
+            case 'V':
+                return Vec(0,c.x);
             default:
                 console.warn('I found something worrying:', c);
-                return createVector(0,0);
+                return Vec(0,0);
         }
     });
-
     return points;
 }
 
-export const setLinePathXY = (pathElt, vectors, closed = false) => {
+export const setLinePathXY = (pathElt: SVGPathElement, vectors: Vec[], closed = false) => {
     pathElt = typecheckPathElement(pathElt);
 
     let encodedTokens = vectors.map((v, i) => {
@@ -81,11 +88,11 @@ export const setLinePathXY = (pathElt, vectors, closed = false) => {
     return dString;
 }
 
-export const cropPath = (pathElt) => {
+export const cropPath = (pathElt: SVGPathElement, canvasBounds: Vec[]) => {
     pathElt = typecheckPathElement(pathElt);
     
     let linePoints = getLinePathXY(pathElt);
-    let linePointsCrop = cyrusBeck(linePoints); //defaults to canvas size
+    let linePointsCrop = cyrusBeck(linePoints, canvasBounds); //defaults to canvas size
     // if (linePointsCrop != null) {
     //     console.log(`old: (${linePoints[0].x}, ${linePoints[0].y}) (${linePoints[1].x}, ${linePoints[1].y})`);
     //     console.log(`new: (${linePointsCrop[0].x}, ${linePointsCrop[0].y}) (${linePointsCrop[1].x}, ${linePointsCrop[1].y})`);}
@@ -96,23 +103,27 @@ export const cropPath = (pathElt) => {
         return -1;
     }
     else {
-        setLinePathXY(pathElt, linePointsCrop) 
+        setLinePathXY(pathElt, linePointsCrop);
 
-        if (VecEquals(linePoints[0], linePointsCrop[0]) &
+        if (VecEquals(linePoints[0], linePointsCrop[0]) &&
             VecEquals(linePoints[1], linePointsCrop[1])) return 0
 
         return 1;
     }
 }
 
-export const cropAllPaths = (c = canvas) => {
-    const { svg } = typecheckSVGCanvasElement(c);
+export const cropAllPaths = (pInst: p5, c: p5.Graphics) => {
+    const elt = typecheckSVGCanvasElement(c);
+    const svg: SVGElement = (elt as any).svg;
+
+    const canvasBounds = canvasVectorSet(c.width, c.height)
+
     let paths = svg.querySelectorAll('path');
     let originalTotal = paths.length;
     let deleted = 0;
     let altered = 0;
     paths.forEach((path, i) => {
-      let result = cropPath(path);    
+      let result = cropPath(path, canvasBounds);    
       if (result == -1) deleted++;
       if (result ==  1) altered++;
     });
@@ -123,7 +134,7 @@ export const cropAllPaths = (c = canvas) => {
     ${originalTotal-deleted} exported...`);
 }
 
-export const processSVG = (c = canvas) => {
-    removeBackgroundSVG(c);
-    cropAllPaths(c);
+export const processSVG = (pInst: p5, c: p5.Graphics) => {
+    removeBackgroundSVG(pInst, c);
+    cropAllPaths(pInst, c);
 }

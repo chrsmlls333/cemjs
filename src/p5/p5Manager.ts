@@ -5,6 +5,7 @@ import { Queue } from '../helpers/Queue';
 import { Mouse } from './p5Mouse';
 import { processSVG } from './p5SVG';
 
+import p5 from 'p5';
 
 export class p5Manager { 
   pInst: p5;
@@ -96,7 +97,7 @@ export class p5Manager {
     svgc.clear(0,0,0,0);
     svgc.push();
     this.userDraw(svgc);
-    processSVG(svgc.elt);
+    processSVG(this.pInst, svgc);
     svgc.save(this.getFileTimeStamp());
     svgc.pop();
 
@@ -111,7 +112,11 @@ export class p5Manager {
 
     if (this.#graphics.P2D) {
       const p2dc = this.#graphics.P2D;
+      p2dc.clear(0,0,0,0);
+      p2dc.push();
+      this.userDraw(p2dc);
       p2dc.save(this.getFileTimeStamp());
+      p2dc.pop();
     }
 
     if (this.#graphics.P2Dhi) {

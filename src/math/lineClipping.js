@@ -1,10 +1,10 @@
 import { Vec, VecEquals, dot } from "./vectormath"
 
-export const canvasVectorSet = () => [
+export const canvasVectorSet = (width = 100, height = 100) => [
     Vec(0,0),
     Vec(width, 0),
     Vec(width,height),
-    Vec(0, height)
+    Vec(0,    height)
 ];
 
 // from: https://www.geeksforgeeks.org/line-clipping-set-2-cyrus-beck-algorithm/
