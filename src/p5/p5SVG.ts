@@ -1,14 +1,9 @@
 import { canvasVectorSet, cyrusBeck } from "../math/lineClipping";
 import { Vec, VecEquals } from "../math/vectormath";
 
-import p5 from 'p5';
-// @ts-ignore
-import p5Svg from "p5.js-svg"
-
-const typecheckSVGCanvasElement = (e: p5.Graphics) => {
-    let elt: p5.Element; //actually a SVGCanvasElement
-    if (e.elt) elt = e.elt;
-    if (!(elt as any).svg || (elt as any).svg.localName != 'svg')
+const typecheckSVGCanvasElement = (svgGraphics: p5.Graphics) => {
+    let elt: p5.Element = svgGraphics.elt; //actually a SVGCanvasElement
+    if (!elt || !(elt as any).svg || (elt as any).svg.localName != 'svg') 
         throw new TypeError('What did you feed me??')
     return elt;
 }
@@ -22,14 +17,14 @@ export const removeBackgroundSVG = (pInst: p5, c: p5.Graphics) => {
         return;
     }
     const bg = query[0];
-    if (Number.parseInt(bg.getAttribute('width'))  == c.width && 
-        Number.parseInt(bg.getAttribute('height')) == c.height) {
+    if (Number.parseInt(bg.getAttribute('width') || "")  == c.width && 
+        Number.parseInt(bg.getAttribute('height') || "") == c.height) {
         bg.remove();
         console.log("Background rect removed from SVG element...");
     }
 }
 
-const typecheckPathElement = e => {
+const typecheckPathElement = (e: p5.Element | Element) => {
     if (e instanceof p5.Element) e = e.elt;
     if (!(e instanceof SVGPathElement && e.localName == 'path'))
         throw new TypeError('What did you feed me??')
@@ -40,16 +35,19 @@ export const getLinePathXY = (pathElt: SVGPathElement) => {
     pathElt = typecheckPathElement(pathElt);
 
     const pathData = pathElt.getAttribute('d');
+    if (!pathData) return [];
     let commTokens = pathData.split(/(?=[mlhvcsqtaz])/i).map(s => s.trim()).filter(Boolean);
     const re = new RegExp(/(?<command>[A-Z]) *(?<x>-?[0-9.]+)[ ,]+(?<y>-?[0-9.]+)/);
-    let commands = commTokens.map( s => {
-        let g = re.exec(s).groups;
-        return {
+    let commands: { command: string, x: number, y: number }[] = [];
+    commTokens.forEach(s => {
+        let g = re.exec(s)?.groups;
+        if (!g) return
+        else commands.push({
             command: g.command,
             x: parseFloat(g.x),
             y: parseFloat(g.y)
-        }
-    } );
+        })
+    })
 
     //Throw if unsupported commands are found!
     let allCommandChars = commands.map(c => c.command);

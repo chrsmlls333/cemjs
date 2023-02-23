@@ -18,8 +18,8 @@ export const mapVector = (vec: Vec, func: (v:number, k:string)=>number) => {
     if ((!vec || vec.x === undefined || vec.y === undefined)) 
         throw new TypeError("I actually only work with Vector-like objects, sorry!");
     
-    return <Vec>mapValues(vec, (v, k:string) => {
-        if (k === 'x' || k === 'y' || k === 'z' ) 
+    return <Vec>mapValues(vec, (v:any, k:string) => {
+        if (k === 'x' || k === 'y' || k === 'z' && typeof v == "number") 
             return func(v, k);
         else return v;
     });

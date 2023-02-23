@@ -5,23 +5,21 @@ import { Queue } from '../helpers/Queue';
 import { Mouse } from './p5Mouse';
 import { processSVG } from './p5SVG';
 
-import p5 from 'p5';
-
 export class p5Manager { 
   pInst: p5;
-  #graphics: { [key: string]: p5|p5.Graphics } = {};
+  #graphics: { [key: string]: p5.Graphics } = {};
   canvas: p5.Renderer;
   P2DhiScale: number;
 
   mouse: Mouse;
 
-  userDraw: (canvas: p5|p5.Graphics)=>void;
+  userDraw?: (canvas: p5.Graphics)=>void;
 
-  constructor(p: p5, width, height) {
+  constructor(p: p5, width = 100, height = 100) {
     this.pInst = p;
     this.canvas = p.createCanvas(width, height, p.P2D);
 
-    this.#graphics.P2D = p;
+    this.#graphics.P2D = <p5.Graphics>p; // white lie
     
     this.#graphics.SVG = p.createGraphics(width, height, (p as any).SVG);
 
@@ -34,6 +32,7 @@ export class p5Manager {
     // this.#graphics.SVG.show();
     // this.#graphics.P2Dhi.show();
 
+    // Convenience
     this.mouse = new Mouse( p );
 
     return this;
@@ -49,7 +48,7 @@ export class p5Manager {
   //====================================================
 
   registerDraw( func: (canvas: p5.Graphics)=>void ) {
-    const isFunction = f => (f && {}.toString.call(f) === '[object Function]');
+    const isFunction = (f:any) => (f && {}.toString.call(f) === '[object Function]');
     if (!isFunction(func)) throw 'User-defined draw() is not a function!';
     this.userDraw = func;
   }
@@ -109,6 +108,8 @@ export class p5Manager {
   #recordImage = () => {
     if (!this.#imageRequested) return;
     this.#imageRequested = false;
+
+    if (!this.userDraw) throw "No user-defined draw() function registered;";
 
     if (this.#graphics.P2D) {
       const p2dc = this.#graphics.P2D;
