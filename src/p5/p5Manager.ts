@@ -1,6 +1,6 @@
 
 import { getTimeStamp } from '../helpers/Clock';
-import { FrameData } from '../helpers/FrameData';
+import { p5FrameData } from '../helpers/FrameData';
 import { Queue } from '../helpers/Queue';
 import { Mouse } from './p5Mouse';
 import { processSVG } from './p5SVG';
@@ -34,6 +34,11 @@ export class p5Manager {
 
     // Convenience
     this.mouse = new Mouse( p );
+
+    // Frame Data
+    this.#frameTS = new p5FrameData(this.pInst, getTimeStamp);
+    this.#frameUserConfig = new p5FrameData(this.pInst);
+    this.#frameUserConfigIsSaved = new p5FrameData(this.pInst, () => false); //store that defaults to false
 
     return this;
   }
@@ -134,25 +139,27 @@ export class p5Manager {
   }
 
 
-  #frameTS = new FrameData(getTimeStamp);
-  getFileTimeStamp() { return this.#frameTS.get() }
-
-
+  
+  
   //=====================================================
-
-
-  #frameUserConfig = new FrameData();
-  #frameUserConfigSaved = new FrameData(() => false);
-  registerUserData( callback ) { this.#frameUserConfig.registerFrameData(callback); }
-  setUserData(data) { this.#frameUserConfig.set(data); }
-  getUserData() { return this.#frameUserConfig.get(); }
+  
+  
+  #frameTS: p5FrameData<string>
+  getFileTimeStamp = () => this.#frameTS.get()
+  #frameUserConfig: p5FrameData<{ [key: string]: unknown }>
+  registerUserDataCallback = (callback: ()=>any) => this.#frameUserConfig.registerDataCallback(callback)
+  setUserData = (data:any) => this.#frameUserConfig.update(data)
+  getUserData = () => this.#frameUserConfig.get()
+  #frameUserConfigIsSaved: p5FrameData<boolean>
+  setUserDataIsSaved = (is: boolean) => this.#frameUserConfigIsSaved.update(is)
+  getUserDataIsSaved = () => this.#frameUserConfigIsSaved.get()
   saveUserData() {
-    if (this.#frameUserConfigSaved.get() === true) return;
+    if (this.getUserDataIsSaved()) return;
     const userData = this.getUserData();
     if ( !userData || !Object.keys(userData).length ) {
       console.warn("p5Manager.saveUserData: No data to write!");
       return;
-    }
+    } 
 
     let json = JSON.stringify(userData, function(key, value) {
       if (value instanceof p5.Vector) {
@@ -163,7 +170,7 @@ export class p5Manager {
     }, 2);
     this.pInst.saveStrings(json.split('\n'), `${this.getFileTimeStamp()}.config.json`, 'json');
 
-    this.#frameUserConfigSaved.set(true);
+    this.#frameUserConfigIsSaved.set(true);
   }
 
 }
