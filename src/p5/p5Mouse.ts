@@ -1,13 +1,17 @@
+import { Vec, vecAddVec, vecSubVec, vecMultScalar, setVec } from "../math";
+
 export class Mouse {
     pInst: p5;
-    readonly defaultAccumulator: p5.Vector;
-    accumulator: p5.Vector;
+    readonly defaultAccumulator: Vec;
+    accumulator: Vec;
 
-    constructor( p5Instance: p5 ) {
+    constructor( p5Instance: p5, externalDragVec = Vec() ) {
         this.pInst = p5Instance;
-        this.defaultAccumulator = p5Instance.createVector();
-        this.accumulator = p5Instance.createVector();
+        this.defaultAccumulator = Vec();
+        this.accumulator = externalDragVec;
     }
+
+    set dragPosition(vector:Vec) { setVec(this.accumulator, vector) }
 
     get x() { return this.pInst.mouseX }
     get y() { return this.pInst.mouseY }
@@ -18,12 +22,11 @@ export class Mouse {
 
     static dragSpeedMult = 0.5;
     drag() {
-        const pos  = this.pInst.createVector( this.pInst.mouseX,  this.pInst.mouseY  );
-        const prev = this.pInst.createVector( this.pInst.pmouseX, this.pInst.pmouseY );
-        const delta = this.pInst.createVector().add(pos).sub( prev );
-        delta.mult( Mouse.dragSpeedMult );
-        this.accumulator.add( delta )
+        const pos  = Vec( this.pInst.mouseX,  this.pInst.mouseY  );        
+        const prev = Vec( this.pInst.pmouseX, this.pInst.pmouseY );
+        let delta = vecMultScalar(vecSubVec(pos, prev), Mouse.dragSpeedMult);
+        setVec(this.accumulator, vecAddVec(this.accumulator, delta))
     }
 
-    reset() { this.accumulator.set(this.defaultAccumulator) }
+    reset() { setVec(this.accumulator, this.defaultAccumulator) }
 }
