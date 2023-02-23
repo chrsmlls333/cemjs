@@ -1,7 +1,7 @@
 
 import { getTimeStamp } from '../helpers/Clock';
 import { p5FrameData } from '../helpers/FrameData';
-import { Queue } from '../helpers/Queue';
+import { RecentAverage } from '../helpers/Queue';
 import { Mouse } from './p5Mouse';
 import { processSVG } from './p5SVG';
 
@@ -60,10 +60,8 @@ export class p5Manager {
 
   //====================================================
 
-  
   preDraw() {
-    let avg = this.#frameCounterTick();
-    document.title = `${Math.round(this.pInst.frameRate())}/${Math.round(avg)} fps, Frame ${this.pInst.frameCount}`;
+    this.#writeFPStoTitle();
   }
 
   runUserDraw() {
@@ -79,11 +77,12 @@ export class p5Manager {
 
   //=====================================================
 
-  #frames = new Queue(300, 60);
-  #frameCounterTick = () => {
-    this.#frames.tick(this.pInst.frameRate());
-    const secondsHistory = 5;
-    return this.#frames.average(this.pInst.frameRate()*secondsHistory);
+  #frameRateHistoryLength = 5
+  #frameRates = new RecentAverage(this.#frameRateHistoryLength*60, 60)
+  #writeFPStoTitle() {
+    let frameRate = this.pInst.frameRate()
+    let avg = this.#frameRates.tick(frameRate, frameRate*this.#frameRateHistoryLength)
+    document.title = `${Math.round(frameRate)}/${Math.round(avg)} fps, Frame ${this.pInst.frameCount}`
   }
 
   //=====================================================
