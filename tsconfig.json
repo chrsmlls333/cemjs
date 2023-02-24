@@ -1,12 +1,22 @@
 {
-  "include": ["src/**/*"],
   "compilerOptions": {
     "target": "ESNext", 
+    "module": "ESNext",
+    "lib": ["ESNext", "DOM"],
+    "moduleResolution": "Node",
     "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
     "allowJs": true,
-    "moduleResolution": "node",
+
+    "strict": true,
+    "noImplicitReturns": true,
+    "useDefineForClassFields": true,
+    
     // "declaration": true,
     // "declarationMap": true,
-    "outDir": "dist"
-  }
+    "outDir": "dist", 
+    "noEmit": true
+  },
+  "include": ["src/**/*"]
 }
