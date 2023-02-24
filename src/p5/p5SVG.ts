@@ -24,11 +24,11 @@ export const removeBackgroundSVG = (pInst: p5, c: p5.Graphics) => {
     }
 }
 
-const typecheckPathElement = (e: p5.Element | Element) => {
-    if (e instanceof p5.Element) e = e.elt;
-    if (!(e instanceof SVGPathElement && e.localName == 'path'))
+const typecheckPathElement = (el: SVGPathElement) => {
+    // if (el instanceof p5.Element) el = el.elt;
+    if (!(el instanceof SVGPathElement && el.localName == 'path'))
         throw new TypeError('What did you feed me??')
-    return e;
+    return el;
 }
 
 export const getLinePathXY = (pathElt: SVGPathElement) => {

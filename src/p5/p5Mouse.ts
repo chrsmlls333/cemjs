@@ -4,6 +4,7 @@ export class Mouse {
     pInst: p5;
     readonly defaultAccumulator: Vec;
     accumulator: Vec;
+    dragCoefficent = 0.5;
 
     constructor( p5Instance: p5, externalDragVec = Vec() ) {
         this.pInst = p5Instance;
@@ -20,11 +21,10 @@ export class Mouse {
     get dragPositionX() { return this.accumulator.x }
     get dragPosition()  { return this.accumulator }
 
-    static dragSpeedMult = 0.5;
     drag() {
         const pos  = Vec( this.pInst.mouseX,  this.pInst.mouseY  );        
         const prev = Vec( this.pInst.pmouseX, this.pInst.pmouseY );
-        let delta = vecMultScalar(vecSubVec(pos, prev), Mouse.dragSpeedMult);
+        let delta = vecMultScalar(vecSubVec(pos, prev), this.dragCoefficent);
         setVec(this.accumulator, vecAddVec(this.accumulator, delta))
     }
 
