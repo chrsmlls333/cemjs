@@ -1,9 +1,23 @@
 
+import isFunction from 'lodash/isFunction';
+
 import { getTimeStamp } from '../helpers/Clock';
 import { p5FrameData } from '../helpers/FrameData';
 import { RecentAverage } from '../helpers/Queue';
 import { Mouse } from './p5Mouse';
 import { processSVG } from './p5SVG';
+
+export enum DrawStages {
+  manager_predraw,
+  predraw,
+  draw,
+  postdraw,
+  manager_postdraw
+}
+
+export interface DrawCall {
+  (canvas: p5.Graphics): void
+}
 
 export class p5Manager { 
   pInst: p5;
@@ -12,8 +26,6 @@ export class p5Manager {
   P2DhiScale: number;
 
   mouse: Mouse;
-
-  userDraw?: (canvas: p5.Graphics)=>void;
 
   constructor(p: p5, width = 100, height = 100) {
     this.pInst = p;
@@ -32,14 +44,17 @@ export class p5Manager {
     // this.#graphics.SVG.show();
     // this.#graphics.P2Dhi.show();
 
-    // Convenience
+    // Convenience /////////////////////////////////////////////////////
     this.mouse = new Mouse( p );
+    this.onDraw(() => this.#writeFPStoTitle(), DrawStages.manager_predraw)
+    this.onDraw(() => this.#recordSVG(), DrawStages.manager_postdraw)
+    this.onDraw(() => this.#recordImage(), DrawStages.manager_postdraw)
 
     // Frame Data
-    this.#frameTS = new p5FrameData(this.pInst, getTimeStamp);
-    this.#frameUserConfig = new p5FrameData(this.pInst);
-    this.#frameUserConfigIsSaved = new p5FrameData(this.pInst, () => false); //store that defaults to false
+    this.#initializeUserDataCache()
 
+    // Commandeer the automatic p5 draw loop
+    this.pInst.draw = this.drawAll
     return this;
   }
   
@@ -52,26 +67,54 @@ export class p5Manager {
 
   //====================================================
 
-  registerDraw( func: (canvas: p5.Graphics)=>void ) {
-    const isFunction = (f:any) => (f && {}.toString.call(f) === '[object Function]');
-    if (!isFunction(func)) throw 'User-defined draw() is not a function!';
-    this.userDraw = func;
+  #allStages = <DrawStages[]>Object.values(DrawStages).filter(v=> typeof v === "number")
+  #userStages = [DrawStages.predraw, DrawStages.draw, DrawStages.postdraw]
+
+  #userDrawCalls = new Map(this.#allStages.map(stage => [
+    <DrawStages>stage, 
+    <DrawCall[]>[]
+  ]));
+
+  registerDrawCall( func: DrawCall, stage = DrawStages.draw, top = false ) {
+    if (!isFunction(func)) throw 'User-defined draw() is not a function!'
+    const stageCalls = this.#userDrawCalls.get(stage)
+    if (!stageCalls) throw `No initialized function array for stage ${stage}!`
+    if (top) stageCalls.unshift(func)
+    else stageCalls.push(func)
   }
+  drawThis = this.registerDrawCall
+  onDraw = this.registerDrawCall
+  onLoop = this.registerDrawCall
+  animate = this.registerDrawCall
+  clearDrawCalls( stage: DrawStages ) { 
+    const stageCalls = this.#userDrawCalls.get(stage)
+    if (stageCalls) stageCalls.length = 0
+  }
+  getDrawCallMap() {  return this.#userDrawCalls }
+  getDrawCalls( stages = this.#allStages ) { return stages.flatMap(stage => this.#userDrawCalls.get(stage)) }
 
   //====================================================
 
-  preDraw() {
-    this.#writeFPStoTitle();
+  runDrawStages = (stages = this.#allStages, graphics = this.#graphics.P2D) => {
+    for (const stage of stages) {
+      const drawCalls = this.#userDrawCalls.get(stage)
+      if (stage === DrawStages.draw && !drawCalls?.length) 
+        console.warn("No user-defined draw() functions registered!");
+      if (drawCalls) for (const drawCall of drawCalls) { drawCall(graphics) }
+    }
+  }
+  drawAll = this.runDrawStages
+
+  runPreDraw() {
+    this.runDrawStages([DrawStages.manager_predraw])
   }
 
-  runUserDraw() {
-    if (!this.userDraw) throw "No user-defined draw() function registered;";
-    this.userDraw(this.#graphics.P2D);
+  runUserDraw(graphics = this.#graphics.P2D) {
+    this.runDrawStages([DrawStages.predraw, DrawStages.draw, DrawStages.postdraw], graphics)
   }
 
-  postDraw() {
-    this.#recordSVG();
-    this.#recordImage();
+  runPostDraw() {
+    this.runDrawStages([DrawStages.manager_postdraw])
   }
 
 
@@ -94,17 +137,20 @@ export class p5Manager {
     this.#svgRequested = false;
 
     if (!this.#graphics.SVG) throw "Can't record an SVG!";
-    if (!this.userDraw) throw "Can't record an SVG! No user-defined draw() function registered;";
+    if (!this.getDrawCalls(this.#userStages).length) 
+      throw "Can't record an SVG! No user-defined draw() functions registered;";
+
+    const ts = getTimeStamp()
 
     const svgc = (this.#graphics.SVG as p5.Graphics);
     svgc.clear(0,0,0,0);
     svgc.push();
-    this.userDraw(svgc);
+    this.runUserDraw(svgc);
     processSVG(this.pInst, svgc);
-    svgc.save(this.getFileTimeStamp());
+    svgc.save(ts);
     svgc.pop();
 
-    this.saveUserData();
+    this.saveUserData(ts);
   }
 
   #imageRequested = false;
@@ -113,14 +159,17 @@ export class p5Manager {
     if (!this.#imageRequested) return;
     this.#imageRequested = false;
 
-    if (!this.userDraw) throw "No user-defined draw() function registered;";
+    if (!this.getDrawCalls(this.#userStages).length) 
+      throw "No user-defined draw() functions registered;";
+
+    const ts = getTimeStamp()
 
     if (this.#graphics.P2D) {
       const p2dc = this.#graphics.P2D;
       p2dc.clear(0,0,0,0);
       p2dc.push();
-      this.userDraw(p2dc);
-      p2dc.save(this.getFileTimeStamp());
+      this.runUserDraw(p2dc);
+      p2dc.save(ts);
       p2dc.pop();
     }
 
@@ -129,12 +178,12 @@ export class p5Manager {
       p2dhic.clear(0,0,0,0);
       p2dhic.push();
       p2dhic.scale(this.P2DhiScale);
-      this.userDraw(p2dhic);
-      p2dhic.save(this.getFileTimeStamp()+'_hi');
+      this.runUserDraw(p2dhic);
+      p2dhic.save(ts+'_hi');
       p2dhic.pop();
     }
 
-    this.saveUserData();
+    this.saveUserData(ts);
   }
 
 
@@ -142,17 +191,18 @@ export class p5Manager {
   
   //=====================================================
   
-  
-  #frameTS: p5FrameData<string>
-  getFileTimeStamp = () => this.#frameTS.get()
-  #frameUserConfig: p5FrameData<{ [key: string]: unknown }>
+  #frameUserConfig!: p5FrameData<{ [key: string]: unknown }>
+  #frameUserConfigIsSaved!: p5FrameData<boolean>
+  #initializeUserDataCache() { 
+    this.#frameUserConfig = new p5FrameData(this.pInst);
+    this.#frameUserConfigIsSaved = new p5FrameData(this.pInst, () => false); //store that defaults to false
+  }
   registerUserDataCallback = (callback: ()=>any) => this.#frameUserConfig.registerDataCallback(callback)
   setUserData = (data:any) => this.#frameUserConfig.update(data)
   getUserData = () => this.#frameUserConfig.get()
-  #frameUserConfigIsSaved: p5FrameData<boolean>
   setUserDataIsSaved = (is: boolean) => this.#frameUserConfigIsSaved.update(is)
   getUserDataIsSaved = () => this.#frameUserConfigIsSaved.get()
-  saveUserData() {
+  saveUserData(timestamp = getTimeStamp()) {
     if (this.getUserDataIsSaved()) return;
     const userData = this.getUserData();
     if ( !userData || !Object.keys(userData).length ) {
@@ -161,13 +211,13 @@ export class p5Manager {
     } 
 
     let json = JSON.stringify(userData, function(key, value) {
-      if (value instanceof p5.Vector) {
+      if ((value as any)?.x !== undefined && (value as any).toString().includes('p5.Vector')) {
         const { x, y, z } = value;
         return { x, y, z };
       }
       return value
     }, 2);
-    this.pInst.saveStrings(json.split('\n'), `${this.getFileTimeStamp()}.config.json`, 'json');
+    this.pInst.saveStrings(json.split('\n'), `${timestamp}.config.json`, 'json');
 
     this.#frameUserConfigIsSaved.set(true);
   }
