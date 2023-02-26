@@ -1,5 +1,8 @@
 
 import isFunction from 'lodash/isFunction';
+import { Pane } from 'tweakpane';
+import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
+import { ButtonGridApi, FpsGraphBladeApi } from '@tweakpane/plugin-essentials';
 
 import { getTimeStamp } from '../helpers/Clock';
 import { p5FrameData } from '../helpers/FrameData';
@@ -41,6 +44,7 @@ export class p5Manager {
 
     // Convenience /////////////////////////////////////////////////////
     this.mouse = new Mouse( p );
+    this.#initializeGUI()
     
 
     // Image Capture
@@ -158,7 +162,7 @@ export class p5Manager {
     svgc.save(ts);
     svgc.pop();
 
-    this.saveUserData(ts);
+    // this.saveUserData(ts);
   }
 
   #imageRequested = false;
@@ -191,7 +195,7 @@ export class p5Manager {
       p2dhic.pop();
     }
 
-    this.saveUserData(ts);
+    // this.saveUserData(ts);
   }
 
 
@@ -228,6 +232,53 @@ export class p5Manager {
     this.pInst.saveStrings(json.split('\n'), `${timestamp}.config.json`, 'json');
 
     this.#frameUserConfigIsSaved.set(true);
+  }
+  
+
+
+  //=====================================================
+  
+  gui?: Pane;
+
+  #initializeGUI() {
+    const pane = new Pane() //{ title: "Parameters" }
+    pane.registerPlugin(EssentialsPlugin);
+    
+    // FPS Graph
+    let fpsgraph = (pane.addBlade({
+      view: "fpsgraph",
+      label: "FPS",
+      lineCount: 3
+    }) as FpsGraphBladeApi)
+    this.onDraw(() => fpsgraph.begin(), DrawStages.manager_predraw)
+    this.onDraw(() => fpsgraph.end(), DrawStages.manager_postdraw)
+
+    // Image Save
+    const saveButtons = new Map([
+      ["PNG", this.requestImage],
+      ["SVG", this.requestSVG],
+      ["ALL", () => { this.requestImage(); this.requestSVG(); }],
+      // ["Preset", null] // TODO
+    ]);
+    (pane.addBlade({
+      view: "buttongrid",
+      size: [3, 1],
+      cells: (x: number, y: number) => ({
+        title: Array.from( saveButtons.keys() )[x + y*3]
+      }),
+      label: "Save"
+    }) as ButtonGridApi).on("click", ev => {
+      const func = saveButtons.get(ev.cell.title)
+      if (func) func()
+    })
+
+    this.onDraw(() => pane.refresh(), DrawStages.manager_postdraw)
+
+    this.gui = pane;
+  }
+  registerGUIAdditions(callback: (pane: Pane)=>void) {
+    if (!this.gui) this.#initializeGUI();
+    if (this.gui) callback(this!.gui);
   }
 
 }
