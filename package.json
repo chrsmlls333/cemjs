@@ -11,6 +11,7 @@
     "dist"
   ],
   "scripts": {
+    "clean": "rimraf dist/**",
     "build": "rimraf dist/** && rollup -c",
     "dev": "rollup -c -w",
     "pretest": "npm run build"

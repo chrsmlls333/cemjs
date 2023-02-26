@@ -27,8 +27,8 @@ export class p5Manager {
 
   mouse: Mouse;
 
-  constructor(p: p5, width = 100, height = 100) {
-    this.pInst = p;
+  constructor( p5Instance: p5, width = 100, height = 100 ) {
+    const p = this.pInst = p5Instance;
     this.canvas = p.createCanvas(width, height, p.P2D);
 
     this.#graphics.P2D = <p5.Graphics>p; // white lie
@@ -39,14 +39,11 @@ export class p5Manager {
     this.P2DhiScale = s;
     this.#graphics.P2Dhi = p.createGraphics(width*s, height*s, p.P2D);
 
-    //debug
-    // this.canvas.hide()
-    // this.#graphics.SVG.show();
-    // this.#graphics.P2Dhi.show();
-
     // Convenience /////////////////////////////////////////////////////
     this.mouse = new Mouse( p );
-    this.onDraw(() => this.#writeFPStoTitle(), DrawStages.manager_predraw)
+    
+
+    // Image Capture
     this.onDraw(() => this.#recordSVG(), DrawStages.manager_postdraw)
     this.onDraw(() => this.#recordImage(), DrawStages.manager_postdraw)
 
@@ -63,6 +60,12 @@ export class p5Manager {
     for (const [canvasName, canvas] of Object.entries(this.canvases)) {
       callback(canvas, canvasName);
     }
+  }
+
+  debugViewCanvases() {
+    // this.canvas.hide()
+    this.#graphics.SVG.show();
+    this.#graphics.P2Dhi.show();
   }
 
   //====================================================
@@ -86,12 +89,14 @@ export class p5Manager {
   onDraw = this.registerDrawCall
   onLoop = this.registerDrawCall
   animate = this.registerDrawCall
-  clearDrawCalls( stage: DrawStages ) { 
+
+  clearDrawCalls( stage: DrawStages = DrawStages.draw ) { 
     const stageCalls = this.#userDrawCalls.get(stage)
     if (stageCalls) stageCalls.length = 0
   }
-  getDrawCallMap() {  return this.#userDrawCalls }
-  getDrawCalls( stages = this.#allStages ) { return stages.flatMap(stage => this.#userDrawCalls.get(stage)) }
+  getDrawCallMap = () => this.#userDrawCalls
+  getDrawCalls = ( stages = this.#allStages ) => 
+    stages.flatMap(stage => this.#userDrawCalls.get(stage))
 
   //====================================================
 
@@ -126,6 +131,9 @@ export class p5Manager {
     let frameRate = this.pInst.frameRate()
     let avg = this.#frameRates.tick(frameRate, frameRate*this.#frameRateHistoryLength)
     document.title = `${Math.round(frameRate)}/${Math.round(avg)} fps, Frame ${this.pInst.frameCount}`
+  }
+  writeFPStoTitleOnDraw() {
+    this.onDraw(() => this.#writeFPStoTitle(), DrawStages.manager_predraw)
   }
 
   //=====================================================
