@@ -1,4 +1,4 @@
-import { Vector3 } from "@math.gl/core";
+import { Vector2, Vector3 } from "@math.gl/core";
 
 
 export interface p5NoiseFieldOptions {
@@ -63,7 +63,7 @@ export class p5NoiseField {
     return this.position;
   }
 
-  get([x = 0, y = 0], centered = false) {
+  get([x, y]: number[] | Vector2, centered = false) {
     const scale = (1 / this.scale) - 0.9 //TODO needs refinement
     const offset = centered ? -0.5 : 0;
     return (this.pInst.noise( 
@@ -73,12 +73,12 @@ export class p5NoiseField {
     ) + offset) * this.amplitude;
   }
 
-  getVec2([x = 0, y = 0], centered = false, mono = this.mono) {
+  getVec2([x, y]: number[] | Vector2, centered = false, mono = this.mono) {
     let nx = this.get([x, y], centered)
-    return {
-      x: nx,
-      y: mono ? nx : this.get([x+1000, y+1000], centered)
-    }
+    return [
+      nx,
+      mono ? nx : this.get([x+1000, y+1000], centered)
+    ]
   }
 
 }

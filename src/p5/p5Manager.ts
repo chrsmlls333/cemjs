@@ -241,8 +241,8 @@ export class p5Manager {
   gui?: Pane;
 
   #initializeGUI() {
-    const pane = new Pane() //{ title: "Parameters" }
-    pane.registerPlugin(EssentialsPlugin);
+    const pane = new Pane({ title: "Parameters" })
+    pane.registerPlugin(EssentialsPlugin)
     
     // FPS Graph
     let fpsgraph = (pane.addBlade({
