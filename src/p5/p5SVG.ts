@@ -1,5 +1,6 @@
-import { canvasVectorSet, cyrusBeck } from "../math/lineClipping";
 import { isEqual } from "lodash";
+import { bboxCorners, bboxVertices, cyrusBeck, liangBarsky } from "../math/lineClipping";
+
 
 const typecheckSVGCanvasElement = (svgGraphics: p5.Graphics) => {
     let elt: p5.Element = svgGraphics.elt; //actually a SVGCanvasElement
@@ -114,7 +115,7 @@ export const cropAllPaths = (pInst: p5, c: p5.Graphics) => {
     const elt = typecheckSVGCanvasElement(c);
     const svg: SVGElement = (elt as any).svg;
 
-    const canvasBounds = canvasVectorSet(c.width, c.height)
+    const canvasBounds = bboxVertices(0, 0, c.width, c.height)
 
     let paths = svg.querySelectorAll('path');
     let originalTotal = paths.length;
@@ -135,4 +136,19 @@ export const cropAllPaths = (pInst: p5, c: p5.Graphics) => {
 export const processSVG = (pInst: p5, c: p5.Graphics) => {
     removeBackgroundSVG(pInst, c);
     cropAllPaths(pInst, c);
+}
+
+// =================================================================
+
+export const drawCropLine = (
+    canvas: p5.Graphics, 
+    x1: number, y1: number, x2: number, y2: number, 
+    bounds = bboxCorners(0, 0, canvas.width, canvas.height)
+) => {
+    const cutline = liangBarsky([[x1,y1], [x2,y2]], bounds)
+    if (cutline !== null) {
+      canvas.line(cutline[0][0], cutline[0][1], cutline[1][0], cutline[1][1])
+      return true
+    }
+    return false
 }
