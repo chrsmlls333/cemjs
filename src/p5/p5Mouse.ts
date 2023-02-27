@@ -1,18 +1,21 @@
-import { Vec, vecAddVec, vecSubVec, vecMultScalar, setVec } from "../math";
+import { Vector2 } from "@math.gl/core";
+
 
 export class Mouse {
     pInst: p5;
-    readonly defaultAccumulator: Vec;
-    accumulator: Vec;
+    readonly defaultAccumulator = new Vector2();
+    accumulator = new Vector2();
+    position = new Vector2();
+    previous = new Vector2();
+    delta = new Vector2();
     dragCoefficent = 0.5;
 
-    constructor( p5Instance: p5, externalDragVec = Vec() ) {
+    constructor( p5Instance: p5, externalDragVec?: Vector2 ) {
         this.pInst = p5Instance;
-        this.defaultAccumulator = Vec();
-        this.accumulator = externalDragVec;
+        if (externalDragVec) this.accumulator = externalDragVec;
     }
 
-    set dragPosition(vector:Vec) { setVec(this.accumulator, vector) }
+    set dragPosition(v: Vector2) { this.accumulator.copy(v) }
 
     get x() { return this.pInst.mouseX }
     get y() { return this.pInst.mouseY }
@@ -22,11 +25,12 @@ export class Mouse {
     get dragPosition()  { return this.accumulator }
 
     drag() {
-        const pos  = Vec( this.pInst.mouseX,  this.pInst.mouseY  );        
-        const prev = Vec( this.pInst.pmouseX, this.pInst.pmouseY );
-        let delta = vecMultScalar(vecSubVec(pos, prev), this.dragCoefficent);
-        setVec(this.accumulator, vecAddVec(this.accumulator, delta))
+        this.position.set( this.pInst.mouseX,  this.pInst.mouseY )
+        this.previous.set( this.pInst.pmouseX, this.pInst.pmouseY )
+        this.delta.subVectors( this.position, this.previous )
+        this.delta.multiplyByScalar(this.dragCoefficent)
+        this.accumulator.add(this.delta)
     }
 
-    reset() { setVec(this.accumulator, this.defaultAccumulator) }
+    reset() { this.accumulator.copy(this.defaultAccumulator) }
 }

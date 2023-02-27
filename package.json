@@ -39,6 +39,7 @@
     "tslib": "^2.5.0"
   },
   "dependencies": {
+    "@math.gl/core": "^3.6.3",
     "@tweakpane/plugin-essentials": "^0.1.8",
     "lodash": "^4.17.21",
     "p5": "^1.6.0",

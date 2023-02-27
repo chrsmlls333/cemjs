@@ -5,7 +5,6 @@ export * from "./lineClipping";
 export * from "./p5math";
 export * from "./random";
 export * from "./scalingfit";
-export * from "./vectormath";
 
 //
 

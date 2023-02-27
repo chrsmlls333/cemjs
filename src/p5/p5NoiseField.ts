@@ -1,4 +1,5 @@
-import { Vec, Vec3, setVec, vecAddVec, vecMultScalar } from "../math";
+import { Vector3 } from "@math.gl/core";
+
 
 export interface p5NoiseFieldOptions {
   seed?: number;
@@ -6,7 +7,7 @@ export interface p5NoiseFieldOptions {
   scale?: number;
   lod?: number;
   falloff?: number;
-  speed?: Vec;
+  speed?: Vector3;
   mono?: boolean;
 }
 
@@ -19,8 +20,9 @@ export class p5NoiseField {
   lod = 4;
   falloff = 0.5;
   
-  speed = Vec3();
-  position = Vec3();
+  speed = new Vector3();
+  position = new Vector3();
+  delta = new Vector3();
   
   mono = false;
 
@@ -33,7 +35,7 @@ export class p5NoiseField {
     this.setFalloff(options.falloff ?? 0.5)
     this.setSeed(options.seed ?? p5NoiseField.randomSeed())
 
-    this.setSpeed(options.speed)
+    if (options.speed) this.setSpeed(options.speed)
 
     this.mono = options.mono ?? false
   }
@@ -52,17 +54,16 @@ export class p5NoiseField {
     this.pInst.noiseDetail(this.lod, falloff) 
   }
 
-  setSpeed(v = Vec3()) {
-    setVec(this.speed, v)
+  setSpeed(v: Vector3) {
+    this.speed.copy(v)
   }
 
   tick(delta = (this.pInst.deltaTime/1000)) {
-    const deltaPosition = vecMultScalar(this.speed, this.scale * delta)
-    setVec( this.position, vecAddVec(this.position, deltaPosition) )
-    return this.position
+    this.position.addScaledVector(this.speed, this.scale * delta)
+    return this.position;
   }
 
-  get({ x, y }: Vec, centered = false) {
+  get([x = 0, y = 0], centered = false) {
     const scale = (1 / this.scale) - 0.9 //TODO needs refinement
     const offset = centered ? -0.5 : 0;
     return (this.pInst.noise( 
@@ -72,12 +73,12 @@ export class p5NoiseField {
     ) + offset) * this.amplitude;
   }
 
-  getVec({ x, y }: Vec, centered = false, mono = this.mono) {
-    let nx = this.get({ x, y }, centered)
-    return Vec(
-      nx, 
-      mono ? nx : this.get({ x: x+1000, y: y+1000 }, centered)
-    )
+  getVec2([x = 0, y = 0], centered = false, mono = this.mono) {
+    let nx = this.get([x, y], centered)
+    return {
+      x: nx,
+      y: mono ? nx : this.get([x+1000, y+1000], centered)
+    }
   }
 
 }

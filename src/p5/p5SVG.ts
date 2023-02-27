@@ -1,5 +1,5 @@
 import { canvasVectorSet, cyrusBeck } from "../math/lineClipping";
-import { Vec, VecEquals } from "../math/vectormath";
+import { isEqual } from "lodash";
 
 const typecheckSVGCanvasElement = (svgGraphics: p5.Graphics) => {
     let elt: p5.Element = svgGraphics.elt; //actually a SVGCanvasElement
@@ -11,12 +11,12 @@ const typecheckSVGCanvasElement = (svgGraphics: p5.Graphics) => {
 export const removeBackgroundSVG = (pInst: p5, c: p5.Graphics) => {
     const elt = typecheckSVGCanvasElement(c);
     const svg: SVGElement = (elt as any).svg;
-    const query = svg.querySelectorAll(':scope > g > rect:first-child');
-    if (!query.length) { 
+    const query = svg.querySelector(':scope > g > rect:first-child');
+    if (!query) { 
         console.log("No background rect found to remove!"); 
         return;
     }
-    const bg = query[0];
+    const bg = query;
     if (Number.parseInt(bg.getAttribute('width') || "")  == c.width && 
         Number.parseInt(bg.getAttribute('height') || "") == c.height) {
         bg.remove();
@@ -58,26 +58,26 @@ export const getLinePathXY = (pathElt: SVGPathElement) => {
     let points = commands.map(c => {
         switch (c.command) {
             case 'M':
-                return Vec(c.x,c.y);
+                return [c.x,c.y];
             case 'L':
-                return Vec(c.x,c.y);
+                return [c.x,c.y];
             case 'H':
-                return Vec(c.x,0);
+                return [c.x,0];
             case 'V':
-                return Vec(0,c.x);
+                return [0,c.x];
             default:
                 console.warn('I found something worrying:', c);
-                return Vec(0,0);
+                return [0,0];
         }
     });
     return points;
 }
 
-export const setLinePathXY = (pathElt: SVGPathElement, vectors: Vec[], closed = false) => {
+export const setLinePathXY = (pathElt: SVGPathElement, vertices: number[][], closed = false) => {
     pathElt = typecheckPathElement(pathElt);
 
-    let encodedTokens = vectors.map((v, i) => {
-        return ` ${i == 0 ? 'M' : 'L'} ${v.x.toPrecision(8)} ${v.y.toPrecision(8)}`;
+    let encodedTokens = vertices.map((v, i) => {
+        return ` ${i == 0 ? 'M' : 'L'} ${v[0].toFixed(3)} ${v[1].toFixed(3)}`;
     })
     let dString = encodedTokens.join('');
     dString = closed ? dString + ' Z' : dString;
@@ -86,25 +86,25 @@ export const setLinePathXY = (pathElt: SVGPathElement, vectors: Vec[], closed = 
     return dString;
 }
 
-export const cropPath = (pathElt: SVGPathElement, canvasBounds: Vec[]) => {
+export const cropPath = (pathElt: SVGPathElement, canvasBounds: number[][]) => {
     pathElt = typecheckPathElement(pathElt);
     
-    let linePoints = getLinePathXY(pathElt);
-    let linePointsCrop = cyrusBeck(linePoints, canvasBounds); //defaults to canvas size
+    let linePoints = getLinePathXY(pathElt)
+    // TODO make this amenable to multi-vertex paths!
+    let linePointsCrop = cyrusBeck([linePoints[0], linePoints[1]], canvasBounds); //defaults to canvas size
     // if (linePointsCrop != null) {
     //     console.log(`old: (${linePoints[0].x}, ${linePoints[0].y}) (${linePoints[1].x}, ${linePoints[1].y})`);
     //     console.log(`new: (${linePointsCrop[0].x}, ${linePointsCrop[0].y}) (${linePointsCrop[1].x}, ${linePointsCrop[1].y})`);}
 
-    if (linePointsCrop == null ||                           //if outside of the canvas
-        VecEquals(linePointsCrop[0], linePointsCrop[1])) {  //if cropped to a single point on the edge
+    if (linePointsCrop == null) { //if outside of the canvas or if cropped to a single point on the edge
         pathElt.remove();
         return -1;
     }
     else {
         setLinePathXY(pathElt, linePointsCrop);
 
-        if (VecEquals(linePoints[0], linePointsCrop[0]) &&
-            VecEquals(linePoints[1], linePointsCrop[1])) return 0
+        if (isEqual(linePoints[0], linePointsCrop[0]) &&
+            isEqual(linePoints[1], linePointsCrop[1])) return 0
 
         return 1;
     }
