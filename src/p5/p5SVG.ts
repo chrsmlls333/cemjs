@@ -38,7 +38,7 @@ export const getLinePathXY = (pathElt: SVGPathElement) => {
     const pathData = pathElt.getAttribute('d');
     if (!pathData) return [];
     let commTokens = pathData.split(/(?=[mlhvcsqtaz])/i).map(s => s.trim()).filter(Boolean);
-    const re = new RegExp(/(?<command>[A-Z]) *(?<x>-?[0-9.]+)[ ,]+(?<y>-?[0-9.]+)/);
+    const re = new RegExp(/(?<command>[A-Z]) *(?<x>[-+]?\d*\.?\d+(?:E[-+]?\d+)?)[ ,]+(?<y>[-+]?\d*\.?\d+(?:E[-+]?\d+)?)/i);
     let commands: { command: string, x: number, y: number }[] = [];
     commTokens.forEach(s => {
         let g = re.exec(s)?.groups;
@@ -122,9 +122,9 @@ export const cropAllPaths = (pInst: p5, c: p5.Graphics) => {
     let deleted = 0;
     let altered = 0;
     paths.forEach((path, i) => {
-      let result = cropPath(path, canvasBounds);    
-      if (result == -1) deleted++;
-      if (result ==  1) altered++;
+        let result = cropPath(path, canvasBounds);
+        if (result == -1) deleted++;
+        if (result ==  1) altered++;
     });
     console.log(`Paths cropped to canvas: 
     ${originalTotal} to process... 
