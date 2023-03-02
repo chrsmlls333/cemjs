@@ -1,4 +1,4 @@
-import { isEqual } from "lodash";
+import { isEqual } from "lodash-es";
 import { bboxCorners, bboxVertices, cyrusBeck, liangBarsky } from "../math/lineClipping";
 
 

@@ -1,5 +1,6 @@
 
-import isFunction from 'lodash/isFunction';
+import { isNumber, isFunction, isString } from 'lodash-es';
+
 import { Pane } from 'tweakpane';
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 import { ButtonGridApi, FpsGraphBladeApi } from '@tweakpane/plugin-essentials';

@@ -1,4 +1,4 @@
-import { isEqual } from "lodash";
+import { isEqual } from "lodash-es";
 // TODO possibly copy loose equality from math.gl
 
 const dot = (a: Readonly<number[]>, b:Readonly<number[]>) => a.map((_x, i) => a[i] * b[i]).reduce((m, n) => m + n);
