@@ -6,10 +6,10 @@ import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 import { ButtonGridApi, FpsGraphBladeApi } from '@tweakpane/plugin-essentials';
 
 import { getTimeStamp } from '../helpers/Clock';
-import { p5FrameData } from '../helpers/FrameData';
 import { RecentAverage } from '../helpers/Queue';
 import { Mouse } from './p5Mouse';
 import { processSVG } from './p5SVG';
+import { vectorReplacer } from '../utils';
 
 export enum DrawStages {
   manager_predraw,
@@ -45,15 +45,14 @@ export class p5Manager {
 
     // Convenience /////////////////////////////////////////////////////
     this.mouse = new Mouse( p );
-    this.#initializeGUI()
-    
+    this.initializeGUI()
 
     // Image Capture
     this.onDraw(() => this.#recordSVG(), DrawStages.manager_postdraw)
     this.onDraw(() => this.#recordImage(), DrawStages.manager_postdraw)
 
-    // Frame Data
-    this.#initializeUserDataCache()
+    // Settings IO
+    this.canvas.drop(this.receiveGUIPresetFromFile.bind(this))
 
     // Commandeer the automatic p5 draw loop
     this.pInst.draw = this.drawAll
@@ -162,8 +161,6 @@ export class p5Manager {
     processSVG(this.pInst, svgc);
     svgc.save(ts);
     svgc.pop();
-
-    // this.saveUserData(ts);
   }
 
   #imageRequested = false;
@@ -195,53 +192,19 @@ export class p5Manager {
       p2dhic.save(ts+'_hi');
       p2dhic.pop();
     }
-
-    // this.saveUserData(ts);
   }
 
 
-  
-  
-  //=====================================================
-  
-  #frameUserConfig!: p5FrameData<{ [key: string]: unknown }>
-  #frameUserConfigIsSaved!: p5FrameData<boolean>
-  #initializeUserDataCache() { 
-    this.#frameUserConfig = new p5FrameData(this.pInst);
-    this.#frameUserConfigIsSaved = new p5FrameData(this.pInst, () => false); //store that defaults to false
-  }
-  registerUserDataCallback = (callback: ()=>any) => this.#frameUserConfig.registerDataCallback(callback)
-  setUserData = (data:any) => this.#frameUserConfig.update(data)
-  getUserData = () => this.#frameUserConfig.get()
-  setUserDataIsSaved = (is: boolean) => this.#frameUserConfigIsSaved.update(is)
-  getUserDataIsSaved = () => this.#frameUserConfigIsSaved.get()
-  saveUserData(timestamp = getTimeStamp()) {
-    if (this.getUserDataIsSaved()) return;
-    const userData = this.getUserData();
-    if ( !userData || !Object.keys(userData).length ) {
-      console.warn("p5Manager.saveUserData: No data to write!");
-      return;
-    } 
-
-    let json = JSON.stringify(userData, function(key, value) {
-      if ((value as any)?.x !== undefined && (value as any).toString().includes('p5.Vector')) {
-        const { x, y, z } = value;
-        return { x, y, z };
-      }
-      return value
-    }, 2);
-    this.pInst.saveStrings(json.split('\n'), `${timestamp}.config.json`, 'json');
-
-    this.#frameUserConfigIsSaved.set(true);
-  }
-  
-
+ 
 
   //=====================================================
   
   gui?: Pane;
+  guiCheck = () => {if ( !this.gui ) throw "GUI is not initialized!"}
 
-  #initializeGUI() {
+  initializeGUI() {
+    if (this.gui) return
+
     const pane = new Pane({ title: "Parameters" })
     pane.registerPlugin(EssentialsPlugin)
     
@@ -253,6 +216,23 @@ export class p5Manager {
     }) as FpsGraphBladeApi)
     this.onDraw(() => fpsgraph.begin(), DrawStages.manager_predraw)
     this.onDraw(() => fpsgraph.end(), DrawStages.manager_postdraw)
+    
+    // Preset Save
+    const presetButtons = new Map([
+      ["Import", this.openFileDialogForGUIPreset.bind(this)],
+      ["Export", this.saveGUIPresetToFile.bind(this)],
+    ]);
+    (pane.addBlade({
+      view: "buttongrid",
+      size: [2, 1],
+      cells: (x: number, y: number) => ({
+        title: Array.from( presetButtons.keys() )[x + y*2]
+      }),
+      label: "Preset"
+    }) as ButtonGridApi).on("click", ev => {
+      const func = presetButtons.get(ev.cell.title)
+      if (func) func()
+    })
 
     // Image Save
     const saveButtons = new Map([
@@ -273,13 +253,113 @@ export class p5Manager {
       if (func) func()
     })
 
+    // Keep GUI updated with bound values
     this.onDraw(() => pane.refresh(), DrawStages.manager_postdraw)
+    
+    // Begin auto-saving to local storage
+    this.registerAutoSaveInterval()
 
     this.gui = pane;
   }
+
   registerGUIAdditions(callback: (pane: Pane)=>void) {
-    if (!this.gui) this.#initializeGUI();
-    if (this.gui) callback(this!.gui);
+    if (!this.gui) this.initializeGUI()
+    if (this.gui) callback(this!.gui)
+    // TODO until error fixed
+    // this.getGUIPresetFromLocalStorage()
+  }
+  
+
+
+  //=====================================================
+
+
+  #localStoragePresetKey = "p5ManagerPresetData"
+  #localStorageSaveTimeKey = "p5ManagerPresetTime"
+  saveGUIPresetToLocalStorage() {
+    try {
+      this.guiCheck()
+      const preset = JSON.stringify(this.gui?.exportPreset(), vectorReplacer)
+      this.pInst.storeItem(this.#localStoragePresetKey, preset)
+      this.pInst.storeItem(this.#localStorageSaveTimeKey, Date.now())
+    } catch (error) {
+      return console.error(error)
+    }
+  }
+
+  #autoSaveTimer?: number | null;
+  registerAutoSaveInterval(ms = 5000) {
+    if (this.#autoSaveTimer != null){
+      clearInterval(this.#autoSaveTimer);
+      this.#autoSaveTimer = null;
+    }
+    this.#autoSaveTimer = setInterval(
+      this.saveGUIPresetToLocalStorage.bind(this), 
+      ms
+    );
+  }
+  // TODO unregister function, if necessary
+
+  getGUIPresetFromLocalStorage() {
+    try {
+      this.guiCheck()
+      const presetString = this.pInst.getItem(this.#localStoragePresetKey)
+      if ( !presetString || !isString(presetString)) 
+        throw "No stored preset available..."
+      const preset = JSON.parse(presetString)
+      this.gui?.importPreset(preset) //load
+      const presetSaveTime = this.pInst.getItem(this.#localStorageSaveTimeKey)
+      if ( !presetSaveTime || !isNumber(presetSaveTime) )
+        throw "Stored preset save time is invalid!"
+      const savetime = new Date(presetSaveTime).toString()
+      console.log(`Loaded GUI preset from local storage @ ${savetime}`);
+    } catch (error) {
+      return console.error(error)
+    }
+  }
+
+  #presetExtension = 'preset.json'
+  saveGUIPresetToFile(timestamp = getTimeStamp()) {
+    try {
+      this.guiCheck()
+      const preset = this.gui?.exportPreset()
+      console.debug("Preset to prepare:", preset)
+      const string = JSON.stringify(preset, vectorReplacer)
+      console.debug("Preset output:", string)
+      this.pInst.saveStrings(string.split('\n'), timestamp, this.#presetExtension)
+    } catch (error) {
+      return console.error(error)
+    }
+  }
+
+  receiveGUIPresetFromFile(file: p5.File) {
+    try {
+      this.guiCheck()
+      if ( !file ) throw ("No file received...")
+      if ( !file.size ) throw ("File received is empty...")
+      if ( 
+        file.subtype !== "json" || 
+        !file.name?.toLowerCase().endsWith(this.#presetExtension)
+      ) throw ("Not a preset file...")
+      console.debug("Received preset file data:", file.data);
+      this.gui?.importPreset(file.data)
+      console.log(`Loaded GUI preset from ${file.name}`);
+    } catch (error) {
+      return console.error(error)
+    }
+  }
+
+
+  openFileDialogForGUIPreset() {
+    const input = this.pInst.createFileInput((file: any) => {
+      console.log(...arguments);
+      this.receiveGUIPresetFromFile(file)
+      input.remove()
+    }, false)
+    input.hide()
+    setTimeout(() => {
+      input.elt.click();
+    }, 250);
   }
 
 }
