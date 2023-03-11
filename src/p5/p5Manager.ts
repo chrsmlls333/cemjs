@@ -2,6 +2,7 @@
 import { isNumber, isFunction, isString } from 'lodash-es';
 
 import { Pane } from 'tweakpane';
+import { PresetObject } from 'tweakpane/dist/types/blade/root/api/preset';
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 import { ButtonGridApi, FpsGraphBladeApi } from '@tweakpane/plugin-essentials';
 
@@ -25,31 +26,59 @@ export interface DrawCall {
 
 export class p5Manager { 
   pInst: p5;
+  wallpaperMode: boolean;
   #graphics: { [key: string]: p5.Graphics } = {};
   canvas: p5.Renderer;
-  P2DhiScale: number;
+  P2DhiScale = 1.0;
 
   mouse: Mouse;
 
-  constructor( p5Instance: p5, width = 100, height = 100 ) {
-    const p = this.pInst = p5Instance;
-    this.canvas = p.createCanvas(width, height, p.P2D);
-
+  constructor( p5Instance: p5, wallpaperMode = false, width = 100, height = 100, svgMode = false ) {
+    const p = this.pInst = p5Instance
+    this.wallpaperMode = wallpaperMode
+    let w = wallpaperMode ? window.innerWidth  : width,
+        h = wallpaperMode ? window.innerHeight : height
+    
+    this.canvas = p.createCanvas(w, h, p.P2D)
     this.#graphics.P2D = <p5.Graphics>p; // white lie
     
-    this.#graphics.SVG = p.createGraphics(width, height, (p as any).SVG);
+    const createP2DhiCanvas = (width = 100, height = 100, target = 4000) => {
+      this.#graphics.P2Dhi?.remove()
+      const scale = Math.ceil(target / Math.max(width, height)) //target 4K resolution
+      this.P2DhiScale = scale
+      this.#graphics.P2Dhi = p.createGraphics(width*scale, height*scale, p.P2D)
+    }
+    createP2DhiCanvas(w, h)
 
-    const s = Math.ceil(4000 / Math.max(width, height)); //target 4K resolution
-    this.P2DhiScale = s;
-    this.#graphics.P2Dhi = p.createGraphics(width*s, height*s, p.P2D);
+    const createSVGCanvas = (width = 100, height = 100) => {
+      this.#graphics.SVG?.remove()
+      this.#graphics.SVG = p.createGraphics(width, height, (p as any).SVG);
+    }
+    if (svgMode) createSVGCanvas(w, h)
 
+    // Fullpage ////////////////////////////////////////////////////////
+
+    if (this.wallpaperMode) {
+      this.canvas.attribute("wallpaper", "true")
+      p.windowResized = ev => {
+        this.pInst.resizeCanvas(window.innerWidth, window.innerHeight)
+        if (this.#graphics.P2Dhi) {
+          createP2DhiCanvas(window.innerWidth, window.innerHeight)
+        }
+        if (this.#graphics.SVG) {
+          createSVGCanvas(window.innerWidth, window.innerHeight)
+        }
+      }
+    }
+    
+    
     // Convenience /////////////////////////////////////////////////////
     this.mouse = new Mouse( p );
     this.initializeGUI()
 
     // Image Capture
-    this.onDraw(() => this.#recordSVG(), DrawStages.manager_postdraw)
     this.onDraw(() => this.#recordImage(), DrawStages.manager_postdraw)
+    this.onDraw(() => this.#recordSVG(), DrawStages.manager_postdraw)
 
     // Settings IO
     this.canvas.drop(this.receiveGUIPresetFromFile.bind(this))
@@ -68,8 +97,8 @@ export class p5Manager {
 
   debugViewCanvases() {
     // this.canvas.hide()
-    this.#graphics.SVG.show();
-    this.#graphics.P2Dhi.show();
+    this.#graphics.SVG?.show();
+    this.#graphics.P2Dhi?.show();
   }
 
   //====================================================
@@ -148,19 +177,22 @@ export class p5Manager {
     if (!this.#svgRequested) return;
     this.#svgRequested = false;
 
-    if (!this.#graphics.SVG) throw "Can't record an SVG!";
-    if (!this.getDrawCalls(this.#userStages).length) 
-      throw "Can't record an SVG! No user-defined draw() functions registered;";
+    try {
+      if (!this.#graphics.SVG) throw "Can't record an SVG!";
+      if (!this.getDrawCalls(this.#userStages).length) 
+        throw "Can't record an SVG! No user-defined draw() functions registered;";
+  
+      const ts = getTimeStamp()
+  
+      const svgc = (this.#graphics.SVG as p5.Graphics);
+      svgc.clear(0,0,0,0);
+      svgc.push();
+      this.runUserDraw(svgc);
+      processSVG(this.pInst, svgc);
+      svgc.save(ts);
+      svgc.pop();
 
-    const ts = getTimeStamp()
-
-    const svgc = (this.#graphics.SVG as p5.Graphics);
-    svgc.clear(0,0,0,0);
-    svgc.push();
-    this.runUserDraw(svgc);
-    processSVG(this.pInst, svgc);
-    svgc.save(ts);
-    svgc.pop();
+    } catch (err) { console.error(err) }
   }
 
   #imageRequested = false;
@@ -169,29 +201,32 @@ export class p5Manager {
     if (!this.#imageRequested) return;
     this.#imageRequested = false;
 
-    if (!this.getDrawCalls(this.#userStages).length) 
-      throw "No user-defined draw() functions registered;";
-
-    const ts = getTimeStamp()
-
-    if (this.#graphics.P2D) {
-      const p2dc = this.#graphics.P2D;
-      p2dc.clear(0,0,0,0);
-      p2dc.push();
-      this.runUserDraw(p2dc);
-      p2dc.save(ts);
-      p2dc.pop();
-    }
-
-    if (this.#graphics.P2Dhi) {
-      const p2dhic = this.#graphics.P2Dhi;
-      p2dhic.clear(0,0,0,0);
-      p2dhic.push();
-      p2dhic.scale(this.P2DhiScale);
-      this.runUserDraw(p2dhic);
-      p2dhic.save(ts+'_hi');
-      p2dhic.pop();
-    }
+    try {
+      if (!this.getDrawCalls(this.#userStages).length) 
+        throw "No user-defined draw() functions registered;";
+  
+      const ts = getTimeStamp()
+  
+      if (this.#graphics.P2D) {
+        const p2dc = this.#graphics.P2D;
+        p2dc.clear(0,0,0,0);
+        p2dc.push();
+        this.runUserDraw(p2dc);
+        p2dc.save(ts);
+        p2dc.pop();
+      }
+  
+      if (this.#graphics.P2Dhi) {
+        const p2dhic = this.#graphics.P2Dhi;
+        p2dhic.clear(0,0,0,0);
+        p2dhic.push();
+        p2dhic.scale(this.P2DhiScale);
+        this.runUserDraw(p2dhic);
+        p2dhic.save(ts+'_hi');
+        p2dhic.pop();
+      }
+      
+    } catch (err) { console.error(err) }
   }
 
 
@@ -265,8 +300,6 @@ export class p5Manager {
   registerGUIAdditions(callback: (pane: Pane)=>void) {
     if (!this.gui) this.initializeGUI()
     if (this.gui) callback(this!.gui)
-    // TODO until error fixed
-    // this.getGUIPresetFromLocalStorage()
   }
   
 
@@ -360,6 +393,11 @@ export class p5Manager {
     setTimeout(() => {
       input.elt.click();
     }, 250);
+  }
+
+  loadGUIPreset(preset: PresetObject) {
+    this.guiCheck()
+    this.gui?.importPreset(preset)
   }
 
 }
