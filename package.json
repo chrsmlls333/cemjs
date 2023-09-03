@@ -14,8 +14,12 @@
     "clean": "rimraf dist/**",
     "build": "rimraf dist/** && rollup -c",
     "dev": "rollup -c -w",
-    "pretest": "npm run build"
+    "pretest": "npm run build",
+    "build:add": "bash ./build-add.sh"
   },
+  "pre-commit": [
+    "build:add"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/chrsmlls333/cemjs.git"
@@ -34,6 +38,7 @@
     "@types/lodash-es": "^4.17.6",
     "@types/p5": "^1.5.0",
     "esbuild": "^0.17.8",
+    "pre-commit": "^1.2.2",
     "rollup": "^3.17.0",
     "rollup-plugin-dts": "^5.2.0",
     "rollup-plugin-esbuild": "^5.0.0",
