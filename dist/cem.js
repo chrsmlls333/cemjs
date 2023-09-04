@@ -200,6 +200,7 @@ const clearTimers = () => {
 };
 
 const newTimer = (function_, delay_) => {
+  if (delay_ == 0) { function_(); return null }
   let t = setTimeout(function_, delay_);
   timeoutArray.push(t);
   return t;
