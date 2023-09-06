@@ -2629,8 +2629,11 @@ const map = (value, istart, istop, ostart, ostop) => {
   return ostart + (ostop - ostart) * ((value - istart) / (istop - istart));
 };
 
+let randomFunc = Math.random;
+const setRandomFunction = (_randomFunction = Math.random) => randomFunc = _randomFunction;
+
 const random = (min, max) => {
-  let rand = Math.random();
+  let rand = randomFunc();
   if (typeof min === 'undefined') return rand;
   else if (typeof max === 'undefined') {
     if (min instanceof Array) return min[Math.floor(rand * min.length)];
@@ -2645,14 +2648,15 @@ const random = (min, max) => {
   }
 };
 
+// Random Integer with min and max inclusive
 const randomInt = (min, max) => {
   min = Math.ceil(min);
   max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+  return Math.floor(random() * (max - min + 1)) + min;
 };
 
 const coin = (odds = 0.5) => {
-  if (random(1) < odds) return true;
+  if (random() < odds) return true;
   else return false;
 };
 
@@ -16284,5 +16288,5 @@ class p5NoiseField {
     }
 }
 
-export { Clock, DrawStages, Easing, ExpiringData, Mouse, Queue, RecentAverage, UIZoom, averageArray, bboxCorners, bboxVertices, calcFillScale, calcScale, ceilStep, clearTimers, coin, coinInt, constrain, cropAllPaths, cropPath, cyrusBeck, degrees, dist, drawCropLine, error, flipAdd, floorStep, generateRandomIndex, getLinePathXY, getTimeStamp, lerp, liangBarsky, map, millis, mod, newTimer, newl, newline, norm, normalize, p5FrameData, p5Manager, p5NoiseField, print, processSVG, radians, random, randomInt, removeBackgroundSVG, removeProps, roundStep, setLinePathXY, setVerbose, shuffleArray, toDegrees, toRadians, tokenize, vectorReplacer, warn };
+export { Clock, DrawStages, Easing, ExpiringData, Mouse, Queue, RecentAverage, UIZoom, averageArray, bboxCorners, bboxVertices, calcFillScale, calcScale, ceilStep, clearTimers, coin, coinInt, constrain, cropAllPaths, cropPath, cyrusBeck, degrees, dist, drawCropLine, error, flipAdd, floorStep, generateRandomIndex, getLinePathXY, getTimeStamp, lerp, liangBarsky, map, millis, mod, newTimer, newl, newline, norm, normalize, p5FrameData, p5Manager, p5NoiseField, print, processSVG, radians, random, randomInt, removeBackgroundSVG, removeProps, roundStep, setLinePathXY, setRandomFunction, setVerbose, shuffleArray, toDegrees, toRadians, tokenize, vectorReplacer, warn };
 //# sourceMappingURL=cem.esm.js.map

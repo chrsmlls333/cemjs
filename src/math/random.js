@@ -1,6 +1,9 @@
 
+let randomFunc = Math.random;
+export const setRandomFunction = (_randomFunction = Math.random) => randomFunc = _randomFunction;
+
 export const random = (min, max) => {
-  let rand = Math.random();
+  let rand = randomFunc();
   if (typeof min === 'undefined') return rand;
   else if (typeof max === 'undefined') {
     if (min instanceof Array) return min[Math.floor(rand * min.length)];
@@ -15,14 +18,15 @@ export const random = (min, max) => {
   }
 };
 
+// Random Integer with min and max inclusive
 export const randomInt = (min, max) => {
   min = Math.ceil(min);
   max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+  return Math.floor(random() * (max - min + 1)) + min;
 }
 
 export const coin = (odds = 0.5) => {
-  if (random(1) < odds) return true;
+  if (random() < odds) return true;
   else return false;
 };
 

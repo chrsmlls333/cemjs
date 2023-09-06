@@ -2631,8 +2631,11 @@ const map = (value, istart, istop, ostart, ostop) => {
   return ostart + (ostop - ostart) * ((value - istart) / (istop - istart));
 };
 
+let randomFunc = Math.random;
+const setRandomFunction = (_randomFunction = Math.random) => randomFunc = _randomFunction;
+
 const random = (min, max) => {
-  let rand = Math.random();
+  let rand = randomFunc();
   if (typeof min === 'undefined') return rand;
   else if (typeof max === 'undefined') {
     if (min instanceof Array) return min[Math.floor(rand * min.length)];
@@ -2647,14 +2650,15 @@ const random = (min, max) => {
   }
 };
 
+// Random Integer with min and max inclusive
 const randomInt = (min, max) => {
   min = Math.ceil(min);
   max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+  return Math.floor(random() * (max - min + 1)) + min;
 };
 
 const coin = (odds = 0.5) => {
-  if (random(1) < odds) return true;
+  if (random() < odds) return true;
   else return false;
 };
 
@@ -16337,6 +16341,7 @@ exports.removeBackgroundSVG = removeBackgroundSVG;
 exports.removeProps = removeProps;
 exports.roundStep = roundStep;
 exports.setLinePathXY = setLinePathXY;
+exports.setRandomFunction = setRandomFunction;
 exports.setVerbose = setVerbose;
 exports.shuffleArray = shuffleArray;
 exports.toDegrees = toDegrees;
