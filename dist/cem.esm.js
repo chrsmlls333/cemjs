@@ -2629,11 +2629,11 @@ const map = (value, istart, istop, ostart, ostop) => {
   return ostart + (ostop - ostart) * ((value - istart) / (istop - istart));
 };
 
-let randomFunc = Math.random;
-const setRandomFunction = (_randomFunction = Math.random) => randomFunc = _randomFunction;
+let _random = Math.random;
+const setRandomFunction = (randomFunction = Math.random) => _random = randomFunction;
 
 const random = (min, max) => {
-  let rand = randomFunc();
+  let rand = _random();
   if (typeof min === 'undefined') return rand;
   else if (typeof max === 'undefined') {
     if (min instanceof Array) return min[Math.floor(rand * min.length)];
@@ -2686,6 +2686,24 @@ const generateRandomIndex = (length) => {
   for (var i = 0; i < length; i++) array[i] = i;
   shuffleArray(array);
   return array;
+};
+
+const randomWeighted = (items, _weights = Array(20).fill(1)) => {
+  // https://github.com/trekhleb/javascript-algorithms/blob/master/src/algorithms/statistics/weighted-random/weightedRandom.js
+  if (!items.length) throw new Error('Items must not be empty');
+
+  var weights = _weights.slice(0); //clone
+
+  var i = 0;
+  for (i = 0; i < weights.length; i++) 
+    weights[i] += weights[i - 1] || 0;
+  
+  var rand = random() * weights[weights.length - 1];
+  
+  for (i = 0; i < weights.length; i++)
+    if (weights[i] > rand) break;
+
+  return items[i];
 };
 
 // Print functions /////////////////////////////////////////////////////
@@ -16288,5 +16306,5 @@ class p5NoiseField {
     }
 }
 
-export { Clock, DrawStages, Easing, ExpiringData, Mouse, Queue, RecentAverage, UIZoom, averageArray, bboxCorners, bboxVertices, calcFillScale, calcScale, ceilStep, clearTimers, coin, coinInt, constrain, cropAllPaths, cropPath, cyrusBeck, degrees, dist, drawCropLine, error, flipAdd, floorStep, generateRandomIndex, getLinePathXY, getTimeStamp, lerp, liangBarsky, map, millis, mod, newTimer, newl, newline, norm, normalize, p5FrameData, p5Manager, p5NoiseField, print, processSVG, radians, random, randomInt, removeBackgroundSVG, removeProps, roundStep, setLinePathXY, setRandomFunction, setVerbose, shuffleArray, toDegrees, toRadians, tokenize, vectorReplacer, warn };
+export { Clock, DrawStages, Easing, ExpiringData, Mouse, Queue, RecentAverage, UIZoom, averageArray, bboxCorners, bboxVertices, calcFillScale, calcScale, ceilStep, clearTimers, coin, coinInt, constrain, cropAllPaths, cropPath, cyrusBeck, degrees, dist, drawCropLine, error, flipAdd, floorStep, generateRandomIndex, getLinePathXY, getTimeStamp, lerp, liangBarsky, map, millis, mod, newTimer, newl, newline, norm, normalize, p5FrameData, p5Manager, p5NoiseField, print, processSVG, radians, random, randomInt, randomWeighted, removeBackgroundSVG, removeProps, roundStep, setLinePathXY, setRandomFunction, setVerbose, shuffleArray, toDegrees, toRadians, tokenize, vectorReplacer, warn };
 //# sourceMappingURL=cem.esm.js.map

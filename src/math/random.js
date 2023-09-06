@@ -1,9 +1,9 @@
 
-let randomFunc = Math.random;
-export const setRandomFunction = (_randomFunction = Math.random) => randomFunc = _randomFunction;
+let _random = Math.random;
+export const setRandomFunction = (randomFunction = Math.random) => _random = randomFunction;
 
 export const random = (min, max) => {
-  let rand = randomFunc();
+  let rand = _random();
   if (typeof min === 'undefined') return rand;
   else if (typeof max === 'undefined') {
     if (min instanceof Array) return min[Math.floor(rand * min.length)];
@@ -57,3 +57,21 @@ export const generateRandomIndex = (length) => {
   shuffleArray(array);
   return array;
 };
+
+export const randomWeighted = (items, _weights = Array(20).fill(1)) => {
+  // https://github.com/trekhleb/javascript-algorithms/blob/master/src/algorithms/statistics/weighted-random/weightedRandom.js
+  if (!items.length) throw new Error('Items must not be empty');
+
+  var weights = _weights.slice(0); //clone
+
+  var i = 0
+  for (i = 0; i < weights.length; i++) 
+    weights[i] += weights[i - 1] || 0;
+  
+  var rand = random() * weights[weights.length - 1];
+  
+  for (i = 0; i < weights.length; i++)
+    if (weights[i] > rand) break;
+
+  return items[i];
+}
